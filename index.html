@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Pirate Studio 21 - Streaming film dan series klasik favorit Anda">
+    <meta name="theme-color" content="#0a0a0f">
+    <meta property="og:title" content="Pirate Studio 21">
+    <meta property="og:description" content="Streaming film dan series klasik">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Pirate Studio 21">
+    
+    <title>Pirate Studio 21 - Streaming Film & Series</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300&display=swap" rel="stylesheet">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- ============ NAVBAR MINIMAL ============ -->
+    <nav class="navbar" id="navbar">
+        <a href="/" class="logo" title="Pirate Studio 21 - Home">
+            <span class="brand-pirate">PIRATE</span><span class="brand-studio">STUDIO</span>
+            <span class="brand-num">21</span>
+        </a>
+        
+        <div class="search-wrap" id="search-wrap">
+            <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input type="text" class="search-input" id="nav-search" placeholder="Cari judul film..." autocomplete="off">
+            <div class="search-dropdown" id="search-dropdown"></div>
+        </div>
+    </nav>
+
+    <!-- ============ MAIN CONTENT ============ -->
+    <main id="main-content">
+        <div class="loading-container">
+            <div class="spinner-lg"></div>
+            <p class="loading-text">Memuat koleksi film...</p>
+        </div>
+    </main>
+
+    <!-- ============ FOOTER ============ -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid footer-grid-2col">
+                <div>
+                    <div class="footer-brand-name">PirateStudio 21</div>
+                    <p class="footer-desc">Kami tidak menyimpan file video. Semua konten di-embed dari penyedia pihak ketiga.</p>
+                </div>
+                <div>
+                    <div class="footer-heading">Disclaimer</div>
+                    <p class="footer-desc">Pirate Studio 21 adalah situs pengindeks embed video dari penyedia pihak ketiga. Kami tidak bertanggung jawab atas konten yang dihosting oleh pihak eksternal.</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Pirate Studio 21 &middot; Untuk tujuan edukasi dan hiburan</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ============ SCRIPTS ============ -->
+    <script src="js/config.js"></script>
+    <script src="js/icons.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/components.js"></script>
+    <script src="js/loadmore.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
