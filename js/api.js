@@ -28,10 +28,12 @@ var API = {
     post: async function(action, data) {
         try {
             console.log('📤 POST:', action, data);
-            var formData = new FormData();
-            formData.append('action', action);
-            formData.append('data', JSON.stringify(data));
-            var response = await fetch(CONFIG.API_URL, { method: 'POST', body: formData });
+            var url = CONFIG.API_URL + '?action=' + encodeURIComponent(action);
+            var response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(data)
+            });
             var result = await response.json();
             this.clearCache();
             return result;
