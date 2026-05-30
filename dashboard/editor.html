@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Tambah Film - Pirate Studio 21</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="css/admin.css">
+    <style>
+    .media-input-wrap { display:flex; gap:8px; align-items:center; }
+    .media-input-wrap input { flex:1; margin-bottom:0 !important; }
+    .media-upload-btn { flex-shrink:0; background:#2a2a3a; border:1px solid #3a3a4a; color:#aaa; border-radius:8px; padding:10px 12px; cursor:pointer; display:flex; align-items:center; transition:background 0.2s,color 0.2s; }
+    .media-upload-btn:hover { background:#e50914; color:#fff; border-color:#e50914; }
+    .media-upload-btn:disabled { opacity:0.5; cursor:not-allowed; }
+    </style>
+</head>
+<body>
+
+    <header class="admin-header">
+        <a href="index.html" class="admin-logo">
+            <span class="logo-red">PIRATE</span><span>STUDIO</span> 21
+        </a>
+        <div class="admin-header-right">
+            <span class="admin-badge">EDITOR</span>
+            <a href="index.html" class="admin-link">← Kembali</a>
+        </div>
+    </header>
+
+    <div class="editor-container">
+        <form id="film-form" class="editor-form">
+            
+            <input type="hidden" id="form-mode" value="add">
+            <input type="hidden" id="original-id" value="">
+
+            <!-- INFO DASAR -->
+            <div class="form-section">
+                <h3 class="form-section-title">📋 Informasi Dasar</h3>
+                
+                <div class="form-row">
+                    <div class="form-group flex-2">
+                        <label for="film-id">ID Film *</label>
+                        <input type="text" id="film-id" name="film-id" required placeholder="contoh: TDK, BB-01, GOT-S01-01">
+                        <small>Series: ID-[episode], contoh: BB-01, BB-02</small>
+                    </div>
+                    <div class="form-group flex-2">
+                        <label for="film-type">Tipe *</label>
+                        <select id="film-type" required>
+                            <option value="movie">Movie</option>
+                            <option value="series">Series</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="film-title">Judul *</label>
+                    <input type="text" id="film-title" required placeholder="Judul film atau series">
+                </div>
+
+                <div class="form-group">
+                    <label for="film-slug">Slug</label>
+                    <input type="text" id="film-slug" placeholder="judul-film-tahun (auto)">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="film-year">Tahun *</label>
+                        <input type="number" id="film-year" required placeholder="2024" min="1900" max="2099">
+                    </div>
+                    <div class="form-group">
+                        <label for="film-rating">Rating</label>
+                        <input type="number" id="film-rating" placeholder="8.5" min="0" max="10" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label for="film-duration">Durasi</label>
+                        <input type="text" id="film-duration" placeholder="120 min / 2 seasons">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="film-genre">Genre *</label>
+                    <input type="text" id="film-genre" required placeholder="Action, Drama, Sci-Fi">
+                </div>
+            </div>
+
+            <!-- DETAIL -->
+            <div class="form-section">
+                <h3 class="form-section-title">📝 Detail Konten</h3>
+                
+                <div class="form-group">
+                    <label for="film-synopsis">Sinopsis</label>
+                    <textarea id="film-synopsis" rows="4" placeholder="Sinopsis film..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="film-director">Sutradara</label>
+                    <input type="text" id="film-director" placeholder="Nama sutradara">
+                </div>
+
+                <div class="form-group">
+                    <label for="film-cast">Pemeran</label>
+                    <input type="text" id="film-cast" placeholder="Actor 1, Actor 2">
+                </div>
+            </div>
+
+            <!-- MEDIA -->
+            <div class="form-section">
+                <h3 class="form-section-title">🖼️ Media & URL</h3>
+                
+                <div class="form-group">
+                    <label for="film-poster">Poster</label>
+                    <div class="media-input-wrap">
+                        <input type="text" id="film-poster" placeholder="https://... atau upload gambar">
+                        <button type="button" class="media-upload-btn" onclick="uploadMedia('film-poster', 'poster-preview')" title="Upload ke Drive">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="preview-box" id="poster-preview">
+                        <span class="preview-placeholder">Preview poster akan muncul di sini</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="film-backdrop">Backdrop</label>
+                    <div class="media-input-wrap">
+                        <input type="text" id="film-backdrop" placeholder="https://... atau upload gambar">
+                        <button type="button" class="media-upload-btn" onclick="uploadMedia('film-backdrop', 'backdrop-preview')" title="Upload ke Drive">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="preview-box backdrop-preview" id="backdrop-preview">
+                        <span class="preview-placeholder">Preview backdrop akan muncul di sini</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="film-embed">URL Embed *</label>
+                    <input type="url" id="film-embed" required placeholder="https://doodstream.com/e/xxxxx">
+                </div>
+
+                <div class="form-group">
+                    <label for="film-download">URL Download</label>
+                    <input type="url" id="film-download" placeholder="https://doodstream.com/d/xxxxx">
+                </div>
+
+                <div class="form-group">
+                    <label for="film-mirror">URL Mirror (Server Alternatif)</label>
+                    <input type="url" id="film-mirror" placeholder="https://mixdrop.co/e/xxxxx">
+                </div>
+
+                <div class="form-group">
+                    <label for="film-subtitle">URL Subtitle</label>
+                    <input type="url" id="film-subtitle" placeholder="https://example.com/sub.vtt">
+                </div>
+
+                <div class="form-group">
+                    <label for="film-trailer">URL Trailer (YouTube Embed)</label>
+                    <input type="url" id="film-trailer" placeholder="https://www.youtube.com/embed/xxxxx">
+                </div>
+            </div>
+
+            <!-- STATUS -->
+            <div class="form-section">
+                <h3 class="form-section-title">⭐ Status Tampilan</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="film-featured">
+                            <span>Featured (Tampil di Hero)</span>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="film-popular">
+                            <span>Popular (Tampil di Film Populer)</span>
+                        </label>
+                    </div>
+                </div>
+                <small style="color:#8888aa;">* Featured bisa lebih dari satu — hero akan tampil secara acak.</small>
+            </div>
+
+            <!-- TOMBOL AKSI -->
+            <div class="form-actions">
+                <button type="button" class="admin-btn admin-btn-success admin-btn-lg" onclick="submitFilm('publish')">
+                    🚀 Rilis
+                </button>
+                <button type="button" class="admin-btn admin-btn-secondary admin-btn-lg" onclick="submitFilm('draft')">
+                    💾 Simpan Draft
+                </button>
+                <button type="button" class="admin-btn admin-btn-outline admin-btn-lg" onclick="window.location.href='index.html'">
+                    Batal
+                </button>
+                <button type="button" class="admin-btn admin-btn-danger admin-btn-lg" id="btn-delete" style="display:none;" onclick="deleteFilm()">
+                    🗑️ Hapus Film
+                </button>
+            </div>
+            
+            <div id="draft-status" class="draft-status" style="display:none;"></div>
+        </form>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="js/api.js"></script>
+    <script src="js/admin.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            initEditor();
+        });
+    </script>
+</body>
+</html>
