@@ -363,9 +363,12 @@ ul, ol {
     }
 }
 
-/* =============================================
-   HERO SECTION
-   ============================================= */
+/* ─── MAIN CONTENT (offset navbar fixed 60px) ── */
+main {
+    padding-top: 60px;
+}
+
+/* ─── HERO SECTION ──────────────────────────── */
 .hero {
     position: relative;
     height: 80vh;
