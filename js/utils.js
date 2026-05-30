@@ -28,5 +28,10 @@ var UTILS = {
 
     emptyHTML: function(msg) {
         return '<div class="empty-container"><div class="empty-icon">' + icon('folder', '48') + '</div><p class="empty-msg">' + msg + '</p></div>';
+    },
+
+    escapeHtml: function(str) {
+        if (!str) return '';
+        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 };
