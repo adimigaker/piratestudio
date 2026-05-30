@@ -3,9 +3,8 @@
 // =============================================
 
 var currentFilm = null;
-var currentServer = 'embed_url';
-var episodeList = [];
-var currentEpisodeId = null;
+var currentEpisode = null; // object episode yg sedang aktif
+var episodes = [];         // array episode dari JSON embed_url
 
 // ─── Init ─────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function() {
@@ -112,19 +111,19 @@ async function loadPlayer() {
         }
 
         currentFilm = res.data;
-        currentEpisodeId = currentFilm.id;
 
-        // Cek apakah ini series
-        if (currentFilm.type === 'series' || isSeriesId(currentFilm.id)) {
-            var seriesId = extractSeriesId(currentFilm.id);
-            // Ambil semua episode
-            var allRes = await API.getAll();
-            if (allRes.status === 'success') {
-                episodeList = allRes.data.filter(function(f) {
-                    return (f.type === 'series' || isSeriesId(f.id)) && extractSeriesId(f.id) === seriesId;
-                }).sort(function(a, b) {
-                    return extractEpisodeNum(a.id) - extractEpisodeNum(b.id);
-                });
+        // Parse episodes jika series
+        if (currentFilm.type === 'series' && currentFilm.embed_url) {
+            try {
+                var parsed = JSON.parse(currentFilm.embed_url);
+                if (Array.isArray(parsed)) {
+                    episodes = parsed;
+                    currentEpisode = episodes[0] || null;
+                }
+            } catch (e) {
+                // embed_url bukan JSON — fallback ke movie mode
+                episodes = [];
+                currentEpisode = null;
             }
         }
 
@@ -142,6 +141,23 @@ function renderPlayer() {
     var main = document.getElementById('player-content');
     if (!main || !currentFilm) return;
 
+    var isSeries = currentFilm.type === 'series' && episodes.length > 0;
+
+    // Tentukan URL embed & download yang aktif
+    var embedUrl = '';
+    var downloadUrl = currentFilm.download_url || '';
+    var mirrorUrl = currentFilm.mirror_url || '';
+    var subtitleUrl = currentFilm.subtitle_url || '';
+
+    if (isSeries && currentEpisode) {
+        embedUrl    = currentEpisode.embed    || '';
+        downloadUrl = currentEpisode.download || '';
+        mirrorUrl   = currentEpisode.mirror   || '';
+        subtitleUrl = currentEpisode.subtitle || '';
+    } else {
+        embedUrl = currentFilm.embed_url || currentFilm.mirror_url || '';
+    }
+
     var html = '<div class="player-container">';
 
     // Back button
@@ -152,37 +168,33 @@ function renderPlayer() {
     // Player
     html += '<div class="player-wrapper">';
     html += '<div class="player-aspect" id="player-frame">';
-    
-    var embedUrl = currentFilm.embed_url || currentFilm.mirror_url || '';
     if (embedUrl) {
         html += '<iframe src="' + embedUrl + '" id="player-iframe" allowfullscreen allow="autoplay; fullscreen; picture-in-picture; encrypted-media" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation" scrolling="no" frameborder="0"></iframe>';
     } else {
         html += '<div class="player-loading">' + icon('play-outline', '48') + '<span>Embed URL belum tersedia</span></div>';
     }
-    
     html += '</div></div>';
 
-    // Server selector (jika ada mirror)
-    if (currentFilm.embed_url && currentFilm.mirror_url) {
+    // Server selector (embed + mirror)
+    if (embedUrl && mirrorUrl) {
         html += '<div class="server-bar">';
         html += '<span class="server-label">' + icon('tv', '14') + ' Server:</span>';
-        html += '<button class="server-btn active" onclick="switchServer(\'embed_url\')">Server 1</button>';
-        html += '<button class="server-btn" onclick="switchServer(\'mirror_url\')">Server 2</button>';
+        html += '<button class="server-btn active" id="btn-server-1" onclick="switchServer(\'' + embedUrl + '\', 0)">Server 1</button>';
+        html += '<button class="server-btn" id="btn-server-2" onclick="switchServer(\'' + mirrorUrl + '\', 1)">Server 2</button>';
         html += '</div>';
     }
 
     html += '<div class="container" style="max-width:900px;">';
 
-    // Episode list (untuk series)
-    if (episodeList.length > 1) {
+    // Episode selector — hanya untuk series
+    if (isSeries) {
         html += '<div class="episode-section">';
-        html += '<div class="episode-title">' + icon('film', '16') + ' Daftar Episode</div>';
+        html += '<div class="episode-title">' + icon('film', '16') + ' Episode</div>';
         html += '<div class="episode-scroll">';
-        for (var i = 0; i < episodeList.length; i++) {
-            var ep = episodeList[i];
-            var epNum = extractEpisodeNum(ep.id);
-            var isActive = ep.id === currentEpisodeId;
-            html += '<button class="episode-btn' + (isActive ? ' active' : '') + '" onclick="changeEpisode(\'' + ep.id + '\')">' + (epNum || 'Ep') + '</button>';
+        for (var i = 0; i < episodes.length; i++) {
+            var ep = episodes[i];
+            var isActive = currentEpisode && ep.ep === currentEpisode.ep;
+            html += '<button class="episode-btn' + (isActive ? ' active' : '') + '" onclick="changeEpisode(' + i + ')">Ep ' + ep.ep + '</button>';
         }
         html += '</div></div>';
     }
@@ -190,49 +202,32 @@ function renderPlayer() {
     // Info section
     html += '<div class="info-section">';
     html += '<div class="info-grid">';
-    
-    // Poster
     html += '<img src="' + (currentFilm.poster || '') + '" alt="' + currentFilm.title + '" class="info-poster" onerror="this.style.background=\'#1a1a24\';this.style.objectFit=\'contain\';">';
-    
-    // Details
     html += '<div class="info-details">';
-    html += '<h1 class="info-title">' + currentFilm.title + '</h1>';
-    
+    html += '<h1 class="info-title">' + currentFilm.title;
+    if (isSeries && currentEpisode) html += ' <span style="color:#e50914;font-size:0.6em;">EP ' + currentEpisode.ep + '</span>';
+    html += '</h1>';
     html += '<div class="info-meta">';
     html += '<span class="info-year">' + (currentFilm.year || '—') + '</span>';
-    if (currentFilm.rating) {
-        html += '<span class="info-rating">' + icon('star', '12') + ' ' + currentFilm.rating + '</span>';
-    }
-    if (currentFilm.duration) {
-        html += '<span class="info-duration">' + icon('clock', '12') + ' ' + currentFilm.duration + '</span>';
-    }
+    if (currentFilm.rating) html += '<span class="info-rating">' + icon('star', '12') + ' ' + currentFilm.rating + '</span>';
+    if (currentFilm.duration) html += '<span class="info-duration">' + icon('clock', '12') + ' ' + currentFilm.duration + '</span>';
     html += '</div>';
-    
-    // Genres
     var genres = UTILS.parseGenres(currentFilm.genre);
     if (genres.length > 0) {
         html += '<div class="info-genres">';
-        for (var g = 0; g < genres.length; g++) {
-            html += '<span class="info-genre-tag">' + genres[g] + '</span>';
-        }
+        for (var g = 0; g < genres.length; g++) html += '<span class="info-genre-tag">' + genres[g] + '</span>';
         html += '</div>';
     }
-    
-    html += '</div></div>'; // close info-grid
+    html += '</div></div>';
 
     // Synopsis
     if (currentFilm.synopsis) {
-        html += '<div class="info-synopsis">';
-        html += '<div class="info-synopsis-label">Sinopsis</div>';
-        html += '<p>' + currentFilm.synopsis + '</p>';
-        html += '</div>';
+        html += '<div class="info-synopsis"><div class="info-synopsis-label">Sinopsis</div><p>' + currentFilm.synopsis + '</p></div>';
     }
 
     // More info
     html += '<div class="info-more">';
-    if (currentFilm.director) {
-        html += '<div class="info-more-item"><span class="info-more-label">Sutradara</span><span class="info-more-value">' + currentFilm.director + '</span></div>';
-    }
+    if (currentFilm.director) html += '<div class="info-more-item"><span class="info-more-label">Sutradara</span><span class="info-more-value">' + currentFilm.director + '</span></div>';
     if (currentFilm.cast) {
         var cast = UTILS.parseGenres(currentFilm.cast);
         html += '<div class="info-more-item"><span class="info-more-label">Pemeran</span><span class="info-more-value">' + cast.slice(0, 3).join(', ') + '</span></div>';
@@ -242,59 +237,90 @@ function renderPlayer() {
 
     // Action buttons
     html += '<div class="action-buttons">';
-    if (currentFilm.download_url) {
-        html += '<a href="' + currentFilm.download_url + '" target="_blank" class="btn-action btn-action-download">' + icon('download', '16') + ' Download</a>';
-    }
-    if (currentFilm.subtitle_url) {
-        html += '<a href="' + currentFilm.subtitle_url + '" target="_blank" class="btn-action">' + icon('file', '16') + ' Subtitle</a>';
-    }
+    if (downloadUrl) html += '<a href="' + downloadUrl + '" target="_blank" class="btn-action btn-action-download">' + icon('download', '16') + ' Download</a>';
+    if (subtitleUrl) html += '<a href="' + subtitleUrl + '" target="_blank" class="btn-action">' + icon('file', '16') + ' Subtitle</a>';
     html += '<button class="btn-action" onclick="copyLink()">' + icon('copy', '16') + ' Salin Link</button>';
     html += '<a href="/" class="btn-action">' + icon('home', '16') + ' Home</a>';
     html += '</div>';
 
     // Comments
-    html += '<div class="comments-section">';
-    html += '<div class="comments-title">' + icon('message', '18') + ' Komentar</div>';
-    html += '<div id="disqus_thread"></div>';
-    html += '</div>';
+    html += '<div class="comments-section"><div class="comments-title">' + icon('message', '18') + ' Komentar</div><div id="disqus_thread"></div></div>';
 
-    html += '</div></div>'; // close container & player-container
-
+    html += '</div></div>';
     main.innerHTML = html;
 }
 
-// ─── Switch Server ────────────────────────────
-function switchServer(serverKey) {
-    currentServer = serverKey;
-    var iframe = document.getElementById('player-iframe');
-    var newUrl = currentFilm[serverKey];
-    
-    if (iframe && newUrl) {
-        iframe.src = newUrl;
-    }
+// ─── Change Episode (tanpa reload halaman) ────
+function changeEpisode(index) {
+    if (!episodes[index]) return;
+    currentEpisode = episodes[index];
 
-    // Update active button
-    var btns = document.querySelectorAll('.server-btn');
-    for (var i = 0; i < btns.length; i++) {
-        btns[i].classList.remove('active');
-        if ((serverKey === 'embed_url' && i === 0) || (serverKey === 'mirror_url' && i === 1)) {
-            btns[i].classList.add('active');
+    // Update iframe langsung
+    var iframe = document.getElementById('player-iframe');
+    var playerFrame = document.getElementById('player-frame');
+    var embedUrl = currentEpisode.embed || '';
+
+    if (embedUrl) {
+        if (iframe) {
+            iframe.src = embedUrl;
+        } else if (playerFrame) {
+            playerFrame.innerHTML = '<iframe src="' + embedUrl + '" id="player-iframe" allowfullscreen allow="autoplay; fullscreen; picture-in-picture; encrypted-media" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation" scrolling="no" frameborder="0"></iframe>';
         }
     }
+
+    // Update episode buttons active state
+    var btns = document.querySelectorAll('.episode-btn');
+    for (var i = 0; i < btns.length; i++) {
+        btns[i].classList.toggle('active', i === index);
+    }
+
+    // Update judul episode
+    var titleEl = document.querySelector('.info-title');
+    if (titleEl) {
+        titleEl.innerHTML = currentFilm.title + ' <span style="color:#e50914;font-size:0.6em;">EP ' + currentEpisode.ep + '</span>';
+    }
+
+    // Update tombol download & subtitle
+    var downloadEl = document.querySelector('.btn-action-download');
+    if (downloadEl) {
+        if (currentEpisode.download) {
+            downloadEl.href = currentEpisode.download;
+            downloadEl.style.display = '';
+        } else {
+            downloadEl.style.display = 'none';
+        }
+    }
+
+    // Update server bar jika ada mirror episode
+    var serverBar = document.querySelector('.server-bar');
+    if (serverBar) {
+        if (currentEpisode.embed && currentEpisode.mirror) {
+            document.getElementById('btn-server-1').onclick = function() { switchServer(currentEpisode.embed, 0); };
+            document.getElementById('btn-server-2').onclick = function() { switchServer(currentEpisode.mirror, 1); };
+            serverBar.style.display = '';
+        } else {
+            serverBar.style.display = 'none';
+        }
+    }
+
+    // Scroll ke player
+    var wrapper = document.querySelector('.player-wrapper');
+    if (wrapper) wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-// ─── Change Episode ───────────────────────────
-function changeEpisode(epId) {
-    window.location.href = 'play.html?id=' + epId;
+// ─── Switch Server ────────────────────────────
+function switchServer(url, btnIndex) {
+    var iframe = document.getElementById('player-iframe');
+    if (iframe && url) iframe.src = url;
+    var btns = document.querySelectorAll('.server-btn');
+    for (var i = 0; i < btns.length; i++) btns[i].classList.toggle('active', i === btnIndex);
 }
 
 // ─── Copy Link ────────────────────────────────
 function copyLink() {
     var url = window.location.href;
     if (navigator.clipboard) {
-        navigator.clipboard.writeText(url).then(function() {
-            alert('Link berhasil disalin!');
-        });
+        navigator.clipboard.writeText(url).then(function() { showCopyToast(); });
     } else {
         var input = document.createElement('input');
         input.value = url;
@@ -302,8 +328,21 @@ function copyLink() {
         input.select();
         document.execCommand('copy');
         document.body.removeChild(input);
-        alert('Link berhasil disalin!');
+        showCopyToast();
     }
+}
+
+function showCopyToast() {
+    var t = document.getElementById('copy-toast');
+    if (!t) {
+        t = document.createElement('div');
+        t.id = 'copy-toast';
+        t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#e50914;color:#fff;padding:10px 20px;border-radius:8px;font-size:14px;z-index:999;opacity:0;transition:opacity 0.3s;';
+        t.textContent = 'Link berhasil disalin!';
+        document.body.appendChild(t);
+    }
+    t.style.opacity = '1';
+    setTimeout(function() { t.style.opacity = '0'; }, 2000);
 }
 
 // ─── Load Disqus ──────────────────────────────
@@ -322,25 +361,4 @@ function renderNotFound(msg) {
         '<p class="player-notfound-msg">' + (msg || 'Film yang Anda cari tidak tersedia.') + '</p>' +
         '<a href="/" class="btn btn-primary">' + icon('home', '16') + ' Kembali ke Home</a>' +
     '</div>';
-}
-
-// ─── Helpers ──────────────────────────────────
-function isSeriesId(id) {
-    return /-\d+$/.test(id);
-}
-
-function extractSeriesId(id) {
-    if (!id) return '';
-    var match = id.match(/^(.+?)-(\d+)$/);
-    if (match) {
-        var sMatch = match[1].match(/^(.+?-S\d+)$/);
-        return sMatch ? sMatch[1] : match[1];
-    }
-    return id;
-}
-
-function extractEpisodeNum(id) {
-    if (!id) return 0;
-    var parts = id.split('-');
-    return parseInt(parts[parts.length - 1]) || 0;
 }
