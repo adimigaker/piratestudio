@@ -25,14 +25,12 @@ function initLiveSearch() {
     var debounceTimer;
     var activeIndex = -1;
 
-    // Tampilkan dropdown saat fokus (jika ada isi)
     searchInput.addEventListener('focus', function() {
         if (this.value.trim().length >= 2) {
             performSearch(this.value.trim());
         }
     });
 
-    // Search saat mengetik (debounce 300ms)
     searchInput.addEventListener('input', function() {
         clearTimeout(debounceTimer);
         var query = this.value.trim();
@@ -48,7 +46,6 @@ function initLiveSearch() {
         }, 300);
     });
 
-    // Keyboard navigation
     searchInput.addEventListener('keydown', function(e) {
         var items = dropdown.querySelectorAll('.search-item');
         
@@ -85,7 +82,6 @@ function initLiveSearch() {
         }
     }
 
-    // Tutup dropdown saat klik di luar
     document.addEventListener('click', function(e) {
         var searchWrap = document.getElementById('search-wrap');
         if (searchWrap && !searchWrap.contains(e.target)) {
@@ -161,21 +157,39 @@ async function loadHomePage() {
         ]);
 
         var featuredRes = results[0];
-        var popularRes = results[1];
-        var latestRes = results[2];
-        var genresRes = results[3];
+        var popularRes  = results[1];
+        var latestRes   = results[2];
+        var genresRes   = results[3];
 
         var html = '';
+        var isFirstSection = true;
 
-        // Hero
-        if (featuredRes.status === 'success' && featuredRes.data) {
-            html += COMPONENTS.hero(featuredRes.data);
+        function sectionPad() {
+            if (isFirstSection) { isFirstSection = false; return ' style="padding-top:80px;"'; }
+            return '';
         }
 
-        // Popular
+        // Hero — pilih acak dari semua yang featured
+        if (featuredRes.status === 'success' && featuredRes.data) {
+            var featuredList = Array.isArray(featuredRes.data) ? featuredRes.data : [featuredRes.data];
+            if (featuredList.length > 0) {
+                var randomFilm = featuredList[Math.floor(Math.random() * featuredList.length)];
+                html += COMPONENTS.hero(randomFilm);
+                isFirstSection = false;
+            }
+        }
+
+        // Genre tags
+        if (genresRes.status === 'success' && genresRes.data.length > 0) {
+            html += '<section class="section section-genre"' + sectionPad() + '><div class="container">';
+            html += COMPONENTS.genreTags(genresRes.data);
+            html += '</div></section>';
+        }
+
+        // Terpopuler
         if (popularRes.status === 'success' && popularRes.data.length > 0) {
-            html += '<section class="section"><div class="container">';
-            html += COMPONENTS.sectionHeader('star', 'Film Populer', popularRes.data.length, 'genre.html');
+            html += '<section class="section"' + sectionPad() + '><div class="container">';
+            html += COMPONENTS.sectionHeader('star', 'Terpopuler', popularRes.data.length, 'genre.html');
             html += '<div class="film-grid grid-6">';
             for (var i = 0; i < popularRes.data.length; i++) {
                 html += COMPONENTS.filmCard(popularRes.data[i], i);
@@ -183,30 +197,23 @@ async function loadHomePage() {
             html += '</div></div></section>';
         }
 
-        // Latest
+        // Terbaru
         if (latestRes.status === 'success' && latestRes.data.length > 0) {
-            html += '<section class="section"><div class="container">';
-            html += COMPONENTS.sectionHeader('clock', 'Rilis Terbaru', latestRes.data.length);
+            html += '<section class="section"' + sectionPad() + '><div class="container">';
+            html += COMPONENTS.sectionHeader('clock', 'Terbaru', latestRes.data.length);
             html += '<div class="film-grid" id="latest-grid"></div>';
             html += '<div id="load-more-container" class="load-more-container"></div>';
             html += '</div></section>';
         }
 
-        // Genre tags
-        if (genresRes.status === 'success' && genresRes.data.length > 0) {
-            html += '<section class="section"><div class="container">';
-            html += COMPONENTS.genreTags(genresRes.data);
-            html += '</div></section>';
-        }
-
-        // Empty
+        // Empty state
         if (!html) {
             html = UTILS.emptyHTML('Belum ada film dalam database');
         }
 
         main.innerHTML = html;
 
-        // Init Load More
+        // Init Load More untuk Terbaru
         if (latestRes.status === 'success' && latestRes.data.length > 9) {
             LOAD_MORE.init('latest-grid', latestRes.data, 9);
         } else if (latestRes.status === 'success' && latestRes.data.length > 0) {
