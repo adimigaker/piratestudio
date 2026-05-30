@@ -52,13 +52,18 @@ var DASHBOARD_API = {
             reader.onload = async function() {
                 try {
                     var base64 = reader.result.split(',')[1];
-                    var ext = file.name.split('.').pop() || 'jpg';
+                    var ext = (file.name || 'img').split('.').pop() || 'jpg';
                     var fileName = 'ps21_' + Date.now() + '.' + ext;
-                    var url = API_URL + '?action=uploadImage';
-                    var response = await fetch(url, {
+                    // Ikuti pola Kisah Tabu: action di dalam body, bukan URL param
+                    var response = await fetch(API_URL, {
                         method: 'POST',
                         headers: { 'Content-Type': 'text/plain' },
-                        body: JSON.stringify({ image: base64, fileName: fileName, mimeType: file.type })
+                        body: JSON.stringify({
+                            action: 'uploadImage',
+                            image: base64,
+                            fileName: fileName,
+                            mimeType: file.type || 'image/jpeg'
+                        })
                     });
                     resolve(await response.json());
                 } catch (err) {
