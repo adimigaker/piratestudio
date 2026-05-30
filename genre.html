@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Jelajahi film berdasarkan genre - Pirate Studio 21">
+    <meta name="theme-color" content="#0a0a0f">
+    <title>Genre - Pirate Studio 21</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <nav class="navbar" id="navbar">
+        <a href="/" class="logo" title="Pirate Studio 21 - Home">
+            <span class="brand-pirate">PIRATE</span><span class="brand-studio">STUDIO</span>
+            <span class="brand-num">21</span>
+        </a>
+        <div class="search-wrap" id="search-wrap">
+            <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input type="text" class="search-input" id="nav-search" placeholder="Cari judul film..." autocomplete="off">
+            <div class="search-dropdown" id="search-dropdown"></div>
+        </div>
+    </nav>
+
+    <main id="main-content">
+        <div class="loading-container">
+            <div class="spinner-lg"></div>
+            <p class="loading-text">Memuat...</p>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid footer-grid-2col">
+                <div>
+                    <div class="footer-brand-name">PirateStudio 21</div>
+                    <p class="footer-desc">Kami tidak menyimpan file video. Semua konten di-embed dari penyedia pihak ketiga.</p>
+                </div>
+                <div>
+                    <div class="footer-heading">Disclaimer</div>
+                    <p class="footer-desc">Pirate Studio 21 adalah situs pengindeks embed video dari penyedia pihak ketiga. Kami tidak bertanggung jawab atas konten yang dihosting oleh pihak eksternal.</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Pirate Studio 21 &middot; Untuk tujuan edukasi dan hiburan</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/config.js"></script>
+    <script src="js/icons.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/components.js"></script>
+    <script src="js/loadmore.js"></script>
+    <script>
+    var activeGenre = UTILS.getParam('genre') || '';
+
+    async function loadGenrePage() {
+        var main = document.getElementById('main-content');
+
+        try {
+            var results = await Promise.all([API.getAll(), API.getGenres()]);
+            var allFilms = results[0];
+            var genresRes = results[1];
+
+            var films = allFilms.status === 'success' ? allFilms.data : [];
+            var genres = genresRes.status === 'success' ? genresRes.data : [];
+
+            // Filter
+            var filtered = activeGenre
+                ? films.filter(function(f) {
+                    return f.genre && f.genre.toLowerCase().indexOf(activeGenre.toLowerCase()) > -1;
+                  })
+                : films;
+
+            var pageTitle = activeGenre ? activeGenre : 'Semua Film';
+            document.title = pageTitle + ' - Pirate Studio 21';
+
+            var html = '<section class="section" style="padding-top:80px;"><div class="container">';
+
+            // Genre tags
+            html += COMPONENTS.genreTags(genres, activeGenre);
+
+            // Header hasil
+            html += '<div class="section-header" style="margin-top:24px;">';
+            html += '<h2 class="section-title">' + icon('film', '18') + ' ' + pageTitle + '</h2>';
+            html += '<span class="section-count">' + filtered.length + ' film</span>';
+            html += '</div>';
+
+            if (filtered.length === 0) {
+                html += UTILS.emptyHTML('Tidak ada film dalam genre ini');
+            } else {
+                html += '<div class="film-grid" id="genre-grid"></div>';
+                html += '<div id="load-more-container" class="load-more-container"></div>';
+            }
+
+            html += '</div></section>';
+            main.innerHTML = html;
+
+            if (filtered.length > 0) {
+                if (filtered.length > 9) {
+                    LOAD_MORE.init('genre-grid', filtered, 9);
+                } else {
+                    var grid = document.getElementById('genre-grid');
+                    filtered.forEach(function(f, i) { grid.innerHTML += COMPONENTS.filmCard(f, i); });
+                }
+            }
+
+        } catch (err) {
+            console.error(err);
+            main.innerHTML = UTILS.errorHTML('Gagal memuat data.');
+        }
+    }
+
+    function initNavbarScroll() {
+        var navbar = document.getElementById('navbar');
+        if (!navbar) return;
+        window.addEventListener('scroll', function() {
+            navbar.classList.toggle('scrolled', window.scrollY > 50);
+        });
+    }
+
+    function initLiveSearch() {
+        var input = document.getElementById('nav-search');
+        var dropdown = document.getElementById('search-dropdown');
+        if (!input || !dropdown) return;
+        var timer;
+        input.addEventListener('input', function() {
+            clearTimeout(timer);
+            var q = this.value.trim();
+            if (q.length < 2) { dropdown.classList.remove('show'); return; }
+            timer = setTimeout(function() {
+                dropdown.innerHTML = '<div class="search-dropdown-loading">' + icon('search','16') + ' Mencari...</div>';
+                dropdown.classList.add('show');
+                API.search(q).then(function(res) {
+                    if (!res.data || !res.data.length) {
+                        dropdown.innerHTML = '<div class="search-dropdown-empty">' + icon('search','20') + '<p>Tidak ditemukan</p></div>';
+                        return;
+                    }
+                    var h = res.data.slice(0,8).map(function(f) {
+                        return '<div class="search-item" onclick="location.href=\'play.html?id='+f.id+'\'">'
+                            + (f.poster ? '<img src="'+f.poster+'" class="search-item-poster" loading="lazy">' : '')
+                            + '<div class="search-item-info"><div class="search-item-title">'+f.title+'</div>'
+                            + '<div class="search-item-meta"><span>'+(f.year||'—')+'</span>'
+                            + '<span class="search-item-type">'+(f.type||'movie')+'</span></div></div></div>';
+                    }).join('');
+                    dropdown.innerHTML = h;
+                });
+            }, 300);
+        });
+        document.addEventListener('click', function(e) {
+            if (!document.getElementById('search-wrap').contains(e.target)) dropdown.classList.remove('show');
+        });
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && this.value.trim()) location.href = 'search.html?q=' + encodeURIComponent(this.value.trim());
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initNavbarScroll();
+        initLiveSearch();
+        loadGenrePage();
+    });
+    </script>
+</body>
+</html>
