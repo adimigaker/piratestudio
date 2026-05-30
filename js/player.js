@@ -5,6 +5,7 @@
 var currentFilm = null;
 var currentEpisode = null; // object episode yg sedang aktif
 var episodes = [];         // array episode dari JSON embed_url
+var trailerMode = false;   // true = sedang putar trailer
 
 // ─── Init ─────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function() {
@@ -111,6 +112,9 @@ async function loadPlayer() {
         }
 
         currentFilm = res.data;
+
+        // Default: tampilkan trailer dulu kalau ada
+        trailerMode = !!(currentFilm.trailer);
 
         // Parse episodes jika series
         if (currentFilm.type === 'series' && currentFilm.embed_url) {
@@ -314,6 +318,43 @@ function switchServer(url, btnIndex) {
     if (iframe && url) iframe.src = url;
     var btns = document.querySelectorAll('.server-btn');
     for (var i = 0; i < btns.length; i++) btns[i].classList.toggle('active', i === btnIndex);
+}
+
+// ─── Switch Tab (trailer / film) ──────────────
+function switchTab(tab) {
+    var trailerUrl = currentFilm.trailer || '';
+    var filmUrl = currentFilm.embed_url || currentFilm.mirror_url || '';
+    var iframe = document.getElementById('player-iframe');
+    var playerFrame = document.getElementById('player-frame');
+
+    var targetUrl = '';
+    if (tab === 'trailer') {
+        trailerMode = true;
+        targetUrl = trailerUrl;
+    } else {
+        trailerMode = false;
+        targetUrl = filmUrl;
+    }
+
+    if (targetUrl) {
+        if (iframe) {
+            iframe.src = targetUrl;
+        } else if (playerFrame) {
+            playerFrame.innerHTML = '<iframe src="' + targetUrl + '" id="player-iframe" allowfullscreen allow="autoplay; fullscreen; picture-in-picture; encrypted-media" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation" scrolling="no" frameborder="0"></iframe>';
+        }
+    }
+
+    // Update tab active state
+    var tabBar = document.getElementById('tab-bar');
+    if (tabBar) {
+        var btns = tabBar.querySelectorAll('.server-btn');
+        btns.forEach(function(btn) {
+            var isTrailerBtn = btn.textContent.trim().indexOf('Trailer') > -1;
+            var isFilmBtn = btn.textContent.trim().indexOf('Full Film') > -1;
+            if (tab === 'trailer') btn.classList.toggle('active', isTrailerBtn);
+            else btn.classList.toggle('active', isFilmBtn);
+        });
+    }
 }
 
 // ─── Copy Link ────────────────────────────────
