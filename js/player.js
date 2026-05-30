@@ -140,6 +140,21 @@ async function loadPlayer() {
     }
 }
 
+// ─── YouTube URL Converter ───────────────────
+function toEmbedUrl(url) {
+    if (!url) return '';
+    // Sudah embed
+    if (url.indexOf('youtube.com/embed/') > -1) return url;
+    // youtu.be/ID
+    var shortMatch = url.match(/youtu\.be\/([\w-]+)/);
+    if (shortMatch) return 'https://www.youtube.com/embed/' + shortMatch[1];
+    // youtube.com/watch?v=ID
+    var watchMatch = url.match(/[?&]v=([\w-]+)/);
+    if (watchMatch) return 'https://www.youtube.com/embed/' + watchMatch[1];
+    // Bukan YouTube — return as-is (bisa embed dari sumber lain)
+    return url;
+}
+
 // ─── Render Player ────────────────────────────
 function renderPlayer() {
     var main = document.getElementById('player-content');
