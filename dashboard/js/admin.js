@@ -25,7 +25,7 @@ function showToast(msg, type) {
 async function loadDashboard() {
     var tableBody = document.getElementById('table-body');
     if (!tableBody) return;
-    tableBody.innerHTML = '<tr><td colspan="10" class="table-loading">⏳ Memuat data...</td></tr>';
+    tableBody.innerHTML = '<tr><td colspan="10" class="table-loading">Memuat data...</td></tr>';
     try {
         var res = await DASHBOARD_API.getAll();
         if (res.status !== 'success') {
@@ -38,7 +38,7 @@ async function loadDashboard() {
         populateGenreFilter();
         renderTable();
         renderPagination();
-        if (allFilms.length > 0) showToast('✅ ' + allFilms.length + ' film dimuat', 'success');
+        if (allFilms.length > 0) showToast(allFilms.length + ' film dimuat', 'success');
     } catch (error) {
         tableBody.innerHTML = '<tr><td colspan="10" class="table-loading">❌ ' + error.message + '</td></tr>';
     }
@@ -102,7 +102,7 @@ function renderTable() {
     var tbody = document.getElementById('table-body');
     if (!tbody) return;
     if (filteredFilms.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" class="table-loading">📭 Tidak ada film</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" class="table-loading">Tidak ada film</td></tr>';
         return;
     }
     var start = (currentPage - 1) * perPage;
@@ -125,11 +125,11 @@ function renderTable() {
         html += '<td>' + (film.year || '—') + '</td>';
         html += '<td>' + (genres.length > 0 ? genres.join(', ') : '—') + '</td>';
         html += '<td>' + (film.rating ? '<span class="table-rating">★ ' + film.rating + '</span>' : '—') + '</td>';
-        html += '<td><span class="table-badge ' + (film.featured === 'TRUE' ? 'yes' : 'no') + '">' + (film.featured === 'TRUE' ? '⭐' : '—') + '</span></td>';
-        html += '<td><span class="table-badge ' + (film.popular === 'TRUE' ? 'yes' : 'no') + '">' + (film.popular === 'TRUE' ? '🔥' : '—') + '</span></td>';
+        html += '<td><span class="table-badge ' + (film.featured === 'TRUE' ? 'yes' : 'no') + '">' + (film.featured === 'TRUE' ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' : '—') + '</span></td>';
+        html += '<td><span class="table-badge ' + (film.popular === 'TRUE' ? 'yes' : 'no') + '">' + (film.popular === 'TRUE' ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c0 0-5 5-5 10a5 5 0 0 0 10 0c0-5-5-10-5-10z"/></svg>' : '—') + '</span></td>';
         html += '<td><div class="table-actions">';
-        html += '<a href="editor.html?id=' + encodeURIComponent(film.id) + '" class="admin-btn admin-btn-sm admin-btn-secondary">✏️</a>';
-        html += '<button class="admin-btn admin-btn-sm admin-btn-danger" onclick="deleteFilmById(\'' + film.id.replace(/'/g, "\\'") + '\')">🗑️</button>';
+        html += '<a href="editor.html?id=' + encodeURIComponent(film.id) + '" class="admin-btn admin-btn-sm admin-btn-secondary"><svg width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7\"/><path d=\"M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z\"/></svg></a>';
+        html += '<button class="admin-btn admin-btn-sm admin-btn-danger" onclick="deleteFilmById(\'' + film.id.replace(/'/g, "\\'") + '\')"><svg width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"3 6 5 6 21 6\"/><path d=\"M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6\"/><path d=\"M10 11v6\"/><path d=\"M14 11v6\"/></svg></button>';
         html += '</div></td></tr>';
     }
     tbody.innerHTML = html;
@@ -153,9 +153,9 @@ async function deleteFilmById(id) {
     if (!confirm('Yakin hapus "' + id + '"?')) return;
     try {
         var res = await DASHBOARD_API.delete(id);
-        if (res.status === 'success') { showToast('✅ Dihapus!', 'success'); loadDashboard(); }
-        else showToast('❌ ' + (res.message || 'Gagal'), 'error');
-    } catch (e) { showToast('❌ Gagal', 'error'); }
+        if (res.status === 'success') { showToast('Dihapus!', 'success'); loadDashboard(); }
+        else showToast('' + (res.message || 'Gagal'), 'error');
+    } catch (e) { showToast('Gagal', 'error'); }
 }
 
 function setupFilters() {
@@ -192,14 +192,14 @@ async function initEditor() {
     }
 
     if (filmId) {
-        document.getElementById('page-title').textContent = '✏️ Edit Film';
+        document.getElementById('page-title').innerHTML = '<svg width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7\"/><path d=\"M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z\"/></svg> Edit Film';
         document.getElementById('form-mode').value = 'edit';
         document.getElementById('original-id').value = filmId;
         document.getElementById('btn-delete').style.display = 'inline-flex';
         document.getElementById('film-id').readOnly = true;
         await loadFilmData(filmId);
     } else {
-        document.getElementById('page-title').textContent = '➕ Tambah Film';
+        document.getElementById('page-title').textContent = 'Tambah Film';
         checkDraft();
     }
 }
@@ -223,7 +223,7 @@ function showPreview(preview, url) {
 async function loadFilmData(id) {
     try {
         var res = await DASHBOARD_API.getById(id);
-        if (res.status !== 'success' || !res.data) { showToast('❌ Tidak ditemukan', 'error'); return; }
+        if (res.status !== 'success' || !res.data) { showToast('Tidak ditemukan', 'error'); return; }
         var f = res.data;
         setVal('film-id', f.id);
         setVal('film-type', f.type);
@@ -238,7 +238,14 @@ async function loadFilmData(id) {
         setVal('film-cast', f.cast);
         setVal('film-poster', f.poster);
         setVal('film-backdrop', f.backdrop);
-        setVal('film-embed', f.embed_url);
+        // Handle embed_url: series = parse episodes, movie = input biasa
+        if (f.type === 'series') {
+            // Panggil toggleSeriesPanel dulu, lalu load episodes
+            if (typeof toggleSeriesPanel === 'function') toggleSeriesPanel();
+            loadEpisodes(f.embed_url);
+        } else {
+            setVal('film-embed', f.embed_url);
+        }
         setVal('film-download', f.download_url);
         setVal('film-mirror', f.mirror_url);
         setVal('film-subtitle', f.subtitle_url);
@@ -247,8 +254,8 @@ async function loadFilmData(id) {
         document.getElementById('film-popular').checked = f.popular === 'TRUE';
         if (f.poster) showPreview(document.getElementById('poster-preview'), f.poster);
         if (f.backdrop) showPreview(document.getElementById('backdrop-preview'), f.backdrop);
-        showToast('✅ Data dimuat', 'success');
-    } catch (e) { showToast('❌ Gagal', 'error'); }
+        showToast('Data dimuat', 'success');
+    } catch (e) { showToast('Gagal', 'error'); }
 }
 
 function setupPreview(inputId, previewId) {
@@ -279,12 +286,12 @@ async function uploadMedia(inputId, previewId) {
     fileInput.onchange = async function() {
         var file = fileInput.files[0];
         if (!file) return;
-        if (file.size > 5 * 1024 * 1024) { showToast('❌ Maks 5MB', 'error'); return; }
+        if (file.size > 5 * 1024 * 1024) { showToast('Maks 5MB', 'error'); return; }
 
         // Cari tombol upload yang sesuai dan disable
         var btn = input.parentElement ? input.parentElement.querySelector('.media-upload-btn') : null;
-        if (btn) { btn.disabled = true; btn.innerHTML = '⏳'; }
-        showToast('⏳ Mengupload gambar...', 'info');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin"><circle cx="12" cy="12" r="10" stroke-opacity="0.2"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>'; }
+        showToast('Mengupload gambar...', 'info');
 
         try {
             var result = await DASHBOARD_API.uploadImage(file);
@@ -292,12 +299,12 @@ async function uploadMedia(inputId, previewId) {
                 input.value = result.url;
                 var preview = document.getElementById(previewId);
                 if (preview) showPreview(preview, result.url);
-                showToast('✅ Upload berhasil!', 'success');
+                showToast('Upload berhasil!', 'success');
             } else {
-                showToast('❌ ' + (result.message || 'Gagal upload'), 'error');
+                showToast('' + (result.message || 'Gagal upload'), 'error');
             }
         } catch (err) {
-            showToast('❌ Error: ' + err.message, 'error');
+            showToast('Error: ' + err.message, 'error');
         }
 
         if (btn) {
@@ -319,7 +326,7 @@ function checkDraft() {
     if (d) {
         try {
             var data = JSON.parse(d);
-            if (confirm('📝 Ditemukan draft. Lanjutkan?')) {
+            if (confirm('Ditemukan draft. Lanjutkan?')) {
                 loadDraftData(data);
                 showDraftStatus('draft');
             } else {
@@ -343,7 +350,12 @@ function loadDraftData(data) {
     setVal('film-cast', data.cast || '');
     setVal('film-poster', data.poster || '');
     setVal('film-backdrop', data.backdrop || '');
-    setVal('film-embed', data.embed_url || '');
+    if (data.type === 'series') {
+        if (typeof toggleSeriesPanel === 'function') toggleSeriesPanel();
+        loadEpisodes(data.embed_url);
+    } else {
+        setVal('film-embed', data.embed_url || '');
+    }
     setVal('film-download', data.download_url || '');
     setVal('film-mirror', data.mirror_url || '');
     setVal('film-subtitle', data.subtitle_url || '');
@@ -360,11 +372,11 @@ function showDraftStatus(status) {
     if (status === 'draft') {
         el.style.display = 'block';
         el.className = 'draft-status draft';
-        el.textContent = '📝 Status: Draft (lokal)';
+        el.textContent = 'Status: Draft (lokal)';
     } else if (status === 'published') {
         el.style.display = 'block';
         el.className = 'draft-status published';
-        el.textContent = '✅ Status: Dirilis';
+        el.textContent = 'Status: Dirilis';
     } else {
         el.style.display = 'none';
     }
@@ -382,7 +394,7 @@ async function submitFilm(action) {
         if (!id) id = document.getElementById('original-id').value.trim();
         console.log('ID:', id);
         
-        if (!id) { showToast('❌ ID diperlukan!', 'error'); return; }
+        if (!id) { showToast('ID diperlukan!', 'error'); return; }
 
         var data = {
             id: id,
@@ -398,7 +410,14 @@ async function submitFilm(action) {
             cast: document.getElementById('film-cast').value.trim(),
             poster: document.getElementById('film-poster').value.trim(),
             backdrop: document.getElementById('film-backdrop').value.trim(),
-            embed_url: document.getElementById('film-embed').value.trim() || 'https://example.com/test',
+            embed_url: (function() {
+                var type = document.getElementById('film-type').value;
+                if (type === 'series') {
+                    var eps = getEpisodes();
+                    return eps.length > 0 ? JSON.stringify(eps) : '[]';
+                }
+                return document.getElementById('film-embed').value.trim();
+            })(),
             download_url: document.getElementById('film-download').value.trim(),
             mirror_url: document.getElementById('film-mirror').value.trim(),
             subtitle_url: document.getElementById('film-subtitle').value.trim(),
@@ -410,7 +429,7 @@ async function submitFilm(action) {
         
         console.log('DATA OK');
         
-        if (!data.title) { showToast('❌ Judul wajib diisi!', 'error'); return; }
+        if (!data.title) { showToast('Judul wajib diisi!', 'error'); return; }
         
         console.log('TITLE OK');
         
@@ -419,7 +438,7 @@ async function submitFilm(action) {
             console.log('MASUK DRAFT');
             localStorage.setItem('ps21_draft', JSON.stringify(data));
             showDraftStatus('draft');
-            showToast('💾 Draft tersimpan!', 'info');
+            showToast('Draft tersimpan!', 'info');
             return;
         }
         
@@ -438,7 +457,7 @@ async function submitFilm(action) {
         var mode = document.getElementById('form-mode').value || 'add';
         console.log('MODE:', mode);
         
-        console.log('📡 Mulai fetch...');
+        console.log('Mulai fetch...');
         
         var res;
         if (mode === 'edit') {
@@ -449,30 +468,30 @@ async function submitFilm(action) {
             res = await DASHBOARD_API.add(data);
         }
         
-        console.log('📥 Response:', JSON.stringify(res));
+        console.log('Response:', JSON.stringify(res));
         
         if (res.status === 'success') {
             localStorage.removeItem('ps21_draft');
             showDraftStatus('published');
-            showToast('🚀 BERHASIL!', 'success');
+            showToast('Berhasil dirilis!', 'success');
             setTimeout(function() { window.location.href = 'index.html'; }, 1500);
         } else {
-            showToast('❌ ' + (res.message || 'Gagal'), 'error');
+            showToast('' + (res.message || 'Gagal'), 'error');
         }
         
         if (btn) {
-            btn.textContent = '🚀 Rilis';
+            btn.textContent = 'Rilis';
             btn.disabled = false;
         }
         
     } catch (e) {
-        console.error('❌ ERROR BESAR:', e.message);
-        console.error('❌ STACK:', e.stack);
-        showToast('❌ Error: ' + e.message, 'error');
+        console.error('ERROR BESAR:', e.message);
+        console.error('STACK:', e.stack);
+        showToast('Error: ' + e.message, 'error');
         
         var btn = document.getElementById('btn-publish');
         if (btn) {
-            btn.textContent = '🚀 Rilis';
+            btn.textContent = 'Rilis';
             btn.disabled = false;
         }
     }
@@ -486,12 +505,95 @@ async function deleteFilm() {
         var res = await DASHBOARD_API.delete(id);
         if (res.status === 'success') {
             localStorage.removeItem('ps21_draft');
-            showToast('✅ Dihapus!', 'success');
+            showToast('Dihapus!', 'success');
             setTimeout(function() { window.location.href = 'index.html'; }, 1000);
-        } else showToast('❌ ' + (res.message || 'Gagal'), 'error');
-    } catch (e) { showToast('❌ Gagal', 'error'); }
+        } else showToast('' + (res.message || 'Gagal'), 'error');
+    } catch (e) { showToast('Gagal', 'error'); }
 }
 
 if (document.getElementById('table-body')) {
     document.addEventListener('DOMContentLoaded', function() { setupFilters(); loadDashboard(); });
+}
+// =============================================
+// EPISODE MANAGEMENT (SERIES)
+// =============================================
+var episodeCount = 0;
+
+function addEpisode(data) {
+    episodeCount++;
+    var ep = episodeCount;
+    var container = document.getElementById('episode-list');
+    if (!container) return;
+
+    var div = document.createElement('div');
+    div.className = 'episode-item';
+    div.dataset.ep = ep;
+    div.innerHTML = [
+        '<div class="episode-item-header">',
+        '  <span class="episode-num">Episode ' + ep + '</span>',
+        '  <button type="button" class="episode-remove" onclick="removeEpisode(this)" title="Hapus episode">',
+        '    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+        '  </button>',
+        '</div>',
+        '<div class="episode-fields">',
+        '  <div><label>URL Embed</label><input type="text" class="ep-embed" placeholder="https://doodstream.com/e/..." value="' + (data && data.embed ? escapeAttr(data.embed) : '') + '"></div>',
+        '  <div><label>URL Download</label><input type="text" class="ep-download" placeholder="https://..." value="' + (data && data.download ? escapeAttr(data.download) : '') + '"></div>',
+        '  <div><label>URL Mirror</label><input type="text" class="ep-mirror" placeholder="https://..." value="' + (data && data.mirror ? escapeAttr(data.mirror) : '') + '"></div>',
+        '  <div><label>URL Subtitle</label><input type="text" class="ep-subtitle" placeholder="https://..." value="' + (data && data.subtitle ? escapeAttr(data.subtitle) : '') + '"></div>',
+        '</div>'
+    ].join('');
+
+    container.appendChild(div);
+    renumberEpisodes();
+}
+
+function removeEpisode(btn) {
+    var item = btn.closest('.episode-item');
+    if (item) item.remove();
+    renumberEpisodes();
+}
+
+function renumberEpisodes() {
+    var items = document.querySelectorAll('.episode-item');
+    items.forEach(function(item, i) {
+        var numEl = item.querySelector('.episode-num');
+        if (numEl) numEl.textContent = 'Episode ' + (i + 1);
+        item.dataset.ep = i + 1;
+    });
+    episodeCount = items.length;
+}
+
+function getEpisodes() {
+    var items = document.querySelectorAll('.episode-item');
+    var episodes = [];
+    items.forEach(function(item, i) {
+        episodes.push({
+            ep: i + 1,
+            embed:    item.querySelector('.ep-embed')?.value.trim()    || '',
+            download: item.querySelector('.ep-download')?.value.trim() || '',
+            mirror:   item.querySelector('.ep-mirror')?.value.trim()   || '',
+            subtitle: item.querySelector('.ep-subtitle')?.value.trim() || ''
+        });
+    });
+    return episodes;
+}
+
+function loadEpisodes(jsonStr) {
+    var container = document.getElementById('episode-list');
+    if (!container) return;
+    container.innerHTML = '';
+    episodeCount = 0;
+    if (!jsonStr) return;
+    try {
+        var episodes = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
+        if (!Array.isArray(episodes)) return;
+        episodes.forEach(function(ep) { addEpisode(ep); });
+    } catch (e) {
+        // kalau bukan JSON, berarti movie biasa — skip
+    }
+}
+
+function escapeAttr(str) {
+    if (!str) return '';
+    return str.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
