@@ -102,7 +102,7 @@ function renderTable() {
     var tbody = document.getElementById('table-body');
     if (!tbody) return;
     if (filteredFilms.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" class="table-loading">Tidak ada film</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="table-loading">Tidak ada film</td></tr>';
         return;
     }
     var start = (currentPage - 1) * perPage;
@@ -112,25 +112,48 @@ function renderTable() {
     for (var i = 0; i < pageFilms.length; i++) {
         var film = pageFilms[i];
         var genres = parseGenres(film.genre);
-        var statusBadge = film.status === 'draft' ? ' <span style="background:#f39c12;color:#000;font-size:0.6rem;padding:2px 6px;border-radius:3px;">DRAFT</span>' : '';
+        var isDraft = film.status === 'draft';
+        var isFeatured = film.featured === 'TRUE';
+        var isPopular = film.popular === 'TRUE';
+
         html += '<tr>';
-        html += '<td>' + (start + i + 1) + '</td>';
+        html += '<td style="width:28px;text-align:center;color:var(--admin-text3);font-size:0.75rem;">' + (start + i + 1) + '</td>';
+
+        // Cover dengan badge overlay
+        html += '<td style="width:54px;">';
+        html += '<div class="cover-wrap">';
         if (film.poster) {
-            html += '<td><img src="' + film.poster + '" class="table-poster" loading="lazy" onerror="this.style.display=\'none\'"></td>';
+            html += '<img src="' + film.poster + '" class="table-poster" loading="lazy" onerror="this.style.opacity=0.2">';
         } else {
-            html += '<td><div class="table-poster" style="background:#1a1a26;">—</div></td>';
+            html += '<div class="table-poster no-poster">—</div>';
         }
-        html += '<td><div class="table-title">' + (film.title || '—') + statusBadge + '</div><small style="color:#555570;">' + (film.id || '—') + '</small></td>';
-        html += '<td><span class="table-type ' + (film.type || 'movie') + '">' + (film.type || 'movie') + '</span></td>';
-        html += '<td>' + (film.year || '—') + '</td>';
-        html += '<td>' + (genres.length > 0 ? genres.join(', ') : '—') + '</td>';
-        html += '<td>' + (film.rating ? '<span class="table-rating">★ ' + film.rating + '</span>' : '—') + '</td>';
-        html += '<td><span class="table-badge ' + (film.featured === 'TRUE' ? 'yes' : 'no') + '">' + (film.featured === 'TRUE' ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' : '—') + '</span></td>';
-        html += '<td><span class="table-badge ' + (film.popular === 'TRUE' ? 'yes' : 'no') + '">' + (film.popular === 'TRUE' ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c0 0-5 5-5 10a5 5 0 0 0 10 0c0-5-5-10-5-10z"/></svg>' : '—') + '</span></td>';
-        html += '<td><div class="table-actions">';
-        html += '<a href="editor.html?id=' + encodeURIComponent(film.id) + '" class="admin-btn admin-btn-sm admin-btn-secondary"><svg width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7\"/><path d=\"M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z\"/></svg></a>';
-        html += '<button class="admin-btn admin-btn-sm admin-btn-danger" onclick="deleteFilmById(\'' + film.id.replace(/'/g, "\\'") + '\')"><svg width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"3 6 5 6 21 6\"/><path d=\"M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6\"/><path d=\"M10 11v6\"/><path d=\"M14 11v6\"/></svg></button>';
-        html += '</div></td></tr>';
+        html += '<div class="cover-badges">';
+        if (isFeatured) html += '<span class="cover-badge-icon featured" title="Featured"><svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"#f1c40f\" stroke=\"#f1c40f\" stroke-width=\"1\"><polygon points=\"12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2\"/></svg></span>';
+        if (isPopular)  html += '<span class="cover-badge-icon popular" title="Popular"><svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#e67e22\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z\"/></svg></span>';
+        html += '</div>';
+        html += '<span class="cover-type ' + (film.type || 'movie') + '">' + (film.type === 'series' ? 'S' : 'M') + '</span>';
+        html += '</div></td>';
+
+        // Info
+        html += '<td>';
+        html += '<div class="table-title">' + (film.title || '—');
+        if (isDraft) html += ' <span class="draft-badge">DRAFT</span>';
+        html += '</div>';
+        html += '<div class="table-meta">';
+        html += '<span>' + (film.year || '—') + '</span>';
+        if (film.rating) html += '<span>&#9733; ' + film.rating + '</span>';
+        if (genres.length > 0) html += '<span>' + genres.slice(0,2).join(', ') + (genres.length > 2 ? '...' : '') + '</span>';
+        html += '</div>';
+        html += '<div style="font-size:0.68rem;color:var(--admin-text3);margin-top:2px;">' + (film.id || '') + '</div>';
+        html += '</td>';
+
+        // Aksi
+        html += '<td style="width:76px;">';
+        html += '<div class="table-actions">';
+        html += '<a href="editor.html?id=' + encodeURIComponent(film.id) + '" class="admin-btn admin-btn-sm admin-btn-secondary" title="Edit"><svg width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7\"/><path d=\"M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z\"/></svg></a>';
+        html += '<button class="admin-btn admin-btn-sm admin-btn-danger" onclick="deleteFilmById(\'' + film.id.replace(/'/g, "\'") + '\')" title="Hapus"><svg width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"3 6 5 6 21 6\"/><path d=\"M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6\"/><path d=\"M10 11v6\"/><path d=\"M14 11v6\"/><path d=\"M9 6V4h6v2\"/></svg></button>';
+        html += '</div></td>';
+        html += '</tr>';
     }
     tbody.innerHTML = html;
 }
