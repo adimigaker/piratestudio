@@ -522,3 +522,77 @@ a { color: inherit; text-decoration: none; }
     color: #2ecc71;
     border: 1px solid rgba(46, 204, 113, 0.3);
 }
+/* ─── COVER WRAP (mobile-first table) ────────── */
+.cover-wrap {
+    position: relative;
+    width: 46px;
+    display: inline-block;
+}
+.table-poster {
+    width: 46px;
+    aspect-ratio: 2/3;
+    object-fit: cover;
+    border-radius: 4px;
+    display: block;
+}
+.table-poster.no-poster {
+    background: #1a1a26;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--admin-text3);
+}
+.cover-badges {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.cover-badge-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    background: rgba(0,0,0,0.65);
+}
+.cover-type {
+    position: absolute;
+    bottom: 3px;
+    right: 3px;
+    font-size: 0.58rem;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 3px;
+    letter-spacing: 0.03em;
+}
+.cover-type.movie { background: #1a6fcf; color: #fff; }
+.cover-type.series { background: #7c3aed; color: #fff; }
+
+/* ─── TABLE META ─────────────────────────────── */
+.table-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 3px;
+    font-size: 0.72rem;
+    color: var(--admin-text2);
+}
+.table-meta span { white-space: nowrap; }
+
+/* ─── DRAFT BADGE ────────────────────────────── */
+.draft-badge {
+    background: #f39c12;
+    color: #000;
+    font-size: 0.58rem;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-weight: 700;
+    vertical-align: middle;
+}
+
+/* ─── ADMIN LINK ICON ALIGN ──────────────────── */
+.admin-link svg { vertical-align: middle; margin-top: -2px; }
