@@ -109,11 +109,33 @@ async function loadPlayer() {
 
 function toEmbedUrl(url) {
     if (!url) return '';
-    if (url.indexOf('youtube.com/embed/') > -1) return url;
-    var shortMatch = url.match(/youtu\.be\/([\w-]+)/);
-    if (shortMatch) return 'https://www.youtube.com/embed/' + shortMatch[1];
-    var watchMatch = url.match(/[?&]v=([\w-]+)/);
-    if (watchMatch) return 'https://www.youtube.com/embed/' + watchMatch[1];
+    var videoId = null;
+    var origin = 'https://piratestudio.vercel.app';
+
+    // Sudah format embed
+    if (url.indexOf('youtube.com/embed/') > -1 || url.indexOf('youtube-nocookie.com/embed/') > -1) {
+        // Pastikan pakai nocookie + origin
+        var idMatch = url.match(/embed\/([\w-]+)/);
+        if (idMatch) videoId = idMatch[1];
+    }
+    // youtu.be/ID
+    if (!videoId) {
+        var shortMatch = url.match(/youtu\.be\/([\w-]+)/);
+        if (shortMatch) videoId = shortMatch[1];
+    }
+    // youtube.com/watch?v=ID
+    if (!videoId) {
+        var watchMatch = url.match(/[?&]v=([\w-]+)/);
+        if (watchMatch) videoId = watchMatch[1];
+    }
+
+    if (videoId) {
+        return 'https://www.youtube-nocookie.com/embed/' + videoId
+            + '?origin=' + encodeURIComponent(origin)
+            + '&rel=0&modestbranding=1';
+    }
+
+    // Bukan YouTube — return as-is
     return url;
 }
 
@@ -152,7 +174,7 @@ function renderPlayer() {
     html += '<div class="player-wrapper">';
     html += '<div class="player-aspect" id="player-frame">';
     if (activeUrl) {
-        html += '<iframe src="' + activeUrl + '" id="player-iframe" allowfullscreen allow="autoplay; fullscreen; picture-in-picture; encrypted-media" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation" scrolling="no" frameborder="0"></iframe>';
+        html += '<iframe src="' + activeUrl + '" id="player-iframe" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" frameborder="0"></iframe>';
     } else {
         html += '<div class="player-loading">' + icon('play', '48') + '<span>Embed URL belum tersedia</span></div>';
     }
@@ -241,7 +263,7 @@ function changeEpisode(index) {
     var playerFrame = document.getElementById('player-frame');
     if (embedUrl) {
         if (iframe) iframe.src = embedUrl;
-        else if (playerFrame) playerFrame.innerHTML = '<iframe src="' + embedUrl + '" id="player-iframe" allowfullscreen allow="autoplay; fullscreen; picture-in-picture; encrypted-media" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation" scrolling="no" frameborder="0"></iframe>';
+        else if (playerFrame) playerFrame.innerHTML = '<iframe src="' + embedUrl + '" id="player-iframe" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" frameborder="0"></iframe>';
     }
     // Update active tab
     var tabBar = document.getElementById('tab-bar');
@@ -279,7 +301,7 @@ function switchTab(tab) {
 
     if (targetUrl) {
         if (iframe) iframe.src = targetUrl;
-        else if (playerFrame) playerFrame.innerHTML = '<iframe src="' + targetUrl + '" id="player-iframe" allowfullscreen allow="autoplay; fullscreen; picture-in-picture; encrypted-media" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation" scrolling="no" frameborder="0"></iframe>';
+        else if (playerFrame) playerFrame.innerHTML = '<iframe src="' + targetUrl + '" id="player-iframe" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" frameborder="0"></iframe>';
     }
 
     // Update active state
