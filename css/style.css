@@ -1266,3 +1266,24 @@ main {
     border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 #ptr-indicator svg { opacity: 0.7; }
+
+/* ─── GOOGLE DRIVE PLAYER ────────────────────── */
+/* Drive embed punya toolbar sendiri ~40px di bawah video */
+/* Kita beri padding-bottom lebih untuk tampung toolbar itu */
+.drive-frame {
+    position: relative;
+    width: 100%;
+    padding-bottom: calc(56.25% + 44px); /* 16:9 + toolbar Drive */
+    height: 0;
+    overflow: hidden;
+    background: #000;
+}
+.drive-frame iframe,
+.player-aspect.drive-frame iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+}
