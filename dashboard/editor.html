@@ -233,7 +233,7 @@
 
             <!-- TOMBOL AKSI -->
             <div class="form-actions">
-                <button type="button" class="admin-btn admin-btn-success admin-btn-lg" onclick="submitFilm('publish')">
+                <button type="button" id="btn-publish" class="admin-btn admin-btn-success admin-btn-lg" onclick="submitFilm('publish')">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg>
                     Rilis
                 </button>
@@ -255,7 +255,7 @@
     </div>
 
     <div class="toast" id="toast"></div>
-
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/api.js"></script>
     <script src="js/admin.js"></script>
     <script>
