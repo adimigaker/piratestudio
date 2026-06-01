@@ -107,6 +107,10 @@ async function loadPlayer() {
     }
 }
 
+function isDriveUrl(url) {
+    return url && url.indexOf('drive.google.com') > -1;
+}
+
 function toEmbedUrl(url) {
     if (!url) return '';
     var videoId = null;
@@ -135,7 +139,11 @@ function toEmbedUrl(url) {
             + '&rel=0&modestbranding=1';
     }
 
-    // Bukan YouTube — return as-is
+    // Google Drive — konversi ke /preview
+    if (url.indexOf('drive.google.com') > -1) {
+        return url.replace('/view', '/preview').replace('/edit', '/preview');
+    }
+    // Bukan YouTube/Drive — return as-is
     return url;
 }
 
@@ -166,7 +174,7 @@ function renderPlayer() {
     var html = '<div class="player-container">';
 
     // Back
-    html += '<div class="container" style="max-width:900px;padding-top:16px;">';
+    html += '<div class="container" style="max-width:900px;padding-top:4px;">';
     html += '<a href="/" class="back-btn">' + icon('arrow-left', '14') + ' Kembali ke Home</a>';
     html += '</div>';
 
@@ -174,6 +182,10 @@ function renderPlayer() {
     html += '<div class="player-wrapper">';
     html += '<div class="player-aspect" id="player-frame">';
     if (activeUrl) {
+        var isDrive = isDriveUrl(activeUrl);
+        // Drive embed butuh extra height untuk toolbar-nya (~44px)
+        var frameStyle = isDrive ? ' style="padding-bottom:calc(56.25% + 44px);"' : '';
+        html = html.replace('<div class="player-aspect" id="player-frame">', '<div class="player-aspect" id="player-frame"' + frameStyle + '>');
         html += '<iframe src="' + activeUrl + '" id="player-iframe" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" frameborder="0"></iframe>';
     } else {
         html += '<div class="player-loading">' + icon('play', '48') + '<span>Embed URL belum tersedia</span></div>';
@@ -246,7 +258,7 @@ function renderPlayer() {
     if (downloadUrl) html += '<a href="' + downloadUrl + '" target="_blank" class="btn-action btn-action-download">' + icon('download', '16') + ' Download</a>';
     if (subtitleUrl) html += '<a href="' + subtitleUrl + '" target="_blank" class="btn-action">' + icon('file', '16') + ' Subtitle</a>';
     html += '<button class="btn-action" onclick="copyLink()">' + icon('copy', '16') + ' Salin Link</button>';
-    html += '<a href="/" class="btn-action">' + icon('home', '16') + ' Home</a>';
+    
     html += '</div>';
 
     html += '<div class="comments-section"><div class="comments-title">' + icon('message', '18') + ' Komentar</div><div id="disqus_thread"></div></div>';
