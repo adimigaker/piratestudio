@@ -4,7 +4,7 @@
 
 /* ─── PLAYER CONTAINER ──────────────────────── */
 .player-container {
-    margin-top: 60px;
+    margin-top: 0;
     min-height: calc(100vh - 60px);
 }
 
@@ -398,8 +398,8 @@
     color: var(--text2);
     font-size: 0.85rem;
     font-weight: 500;
-    padding: 8px 0;
-    margin-bottom: 8px;
+    padding: 4px 0;
+    margin-bottom: 4px;
     transition: color var(--transition);
     cursor: pointer;
     text-decoration: none;
