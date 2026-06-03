@@ -81,6 +81,55 @@ function initLiveSearch() {
     }
 }
 
+// ── Merge 4 kolom episode terpisah jadi satu array ──
+function mergeEpisodes(film) {
+    function parseCol(val) {
+        if (!val) return [];
+        if (typeof val === 'string') {
+            try { var p = JSON.parse(val); return Array.isArray(p) ? p : []; }
+            catch(e) { return []; }
+        }
+        return Array.isArray(val) ? val : [];
+    }
+
+    var embeds    = parseCol(film.embed_url);
+    var downloads = parseCol(film.download_url);
+    var mirrors   = parseCol(film.mirror_url);
+    var subtitles = parseCol(film.subtitle_url);
+
+    // Kalau embed_url sudah format lama (punya semua field), pakai langsung
+    if (embeds.length > 0 && embeds[0].download !== undefined) {
+        return embeds;
+    }
+
+    // Format baru — merge berdasarkan ep number
+    var map = {};
+
+    embeds.forEach(function(e) {
+        var n = e.ep;
+        if (!map[n]) map[n] = { ep: n, embed: '', download: '', mirror: '', subtitle: '' };
+        map[n].embed = e.embed || '';
+    });
+    downloads.forEach(function(e) {
+        var n = e.ep;
+        if (!map[n]) map[n] = { ep: n, embed: '', download: '', mirror: '', subtitle: '' };
+        map[n].download = e.download || '';
+    });
+    mirrors.forEach(function(e) {
+        var n = e.ep;
+        if (!map[n]) map[n] = { ep: n, embed: '', download: '', mirror: '', subtitle: '' };
+        map[n].mirror = e.mirror || '';
+    });
+    subtitles.forEach(function(e) {
+        var n = e.ep;
+        if (!map[n]) map[n] = { ep: n, embed: '', download: '', mirror: '', subtitle: '' };
+        map[n].subtitle = e.subtitle || '';
+    });
+
+    // Sort by ep number
+    return Object.values(map).sort(function(a, b) { return a.ep - b.ep; });
+}
+
 async function loadPlayer() {
     var filmId = UTILS.getParam('id');
     var main = document.getElementById('player-content');
@@ -93,11 +142,9 @@ async function loadPlayer() {
         trailerMode = !!(currentFilm.trailer);
         episodes = [];
         currentEpisode = null;
-        if (currentFilm.type === 'series' && currentFilm.embed_url) {
-            try {
-                var parsed = JSON.parse(currentFilm.embed_url);
-                if (Array.isArray(parsed)) { episodes = parsed; currentEpisode = episodes[0] || null; }
-            } catch(e) {}
+        if (currentFilm.type === 'series') {
+            episodes = mergeEpisodes(currentFilm);
+            currentEpisode = episodes[0] || null;
         }
         renderPlayer();
         loadDisqus();
@@ -115,35 +162,26 @@ function toEmbedUrl(url) {
     if (!url) return '';
     var videoId = null;
     var origin = 'https://piratestudio.vercel.app';
-
-    // Sudah format embed
     if (url.indexOf('youtube.com/embed/') > -1 || url.indexOf('youtube-nocookie.com/embed/') > -1) {
-        // Pastikan pakai nocookie + origin
         var idMatch = url.match(/embed\/([\w-]+)/);
         if (idMatch) videoId = idMatch[1];
     }
-    // youtu.be/ID
     if (!videoId) {
         var shortMatch = url.match(/youtu\.be\/([\w-]+)/);
         if (shortMatch) videoId = shortMatch[1];
     }
-    // youtube.com/watch?v=ID
     if (!videoId) {
         var watchMatch = url.match(/[?&]v=([\w-]+)/);
         if (watchMatch) videoId = watchMatch[1];
     }
-
     if (videoId) {
         return 'https://www.youtube-nocookie.com/embed/' + videoId
             + '?origin=' + encodeURIComponent(origin)
             + '&rel=0&modestbranding=1';
     }
-
-    // Google Drive — konversi ke /preview
     if (url.indexOf('drive.google.com') > -1) {
         return url.replace('/view', '/preview').replace('/edit', '/preview');
     }
-    // Bukan YouTube/Drive — return as-is
     return url;
 }
 
@@ -155,7 +193,6 @@ function renderPlayer() {
     var trailerUrl = toEmbedUrl(currentFilm.trailer || '');
     var hasTrailer = !!trailerUrl;
 
-    // URL yang aktif di iframe
     var embedUrl = '', downloadUrl = '', mirrorUrl = '', subtitleUrl = '';
     if (isSeries && currentEpisode) {
         embedUrl    = currentEpisode.embed    || '';
@@ -163,7 +200,7 @@ function renderPlayer() {
         mirrorUrl   = currentEpisode.mirror   || '';
         subtitleUrl = currentEpisode.subtitle || '';
     } else {
-        embedUrl    = currentFilm.embed_url    || '';
+        embedUrl    = typeof currentFilm.embed_url === 'string' ? currentFilm.embed_url : '';
         downloadUrl = currentFilm.download_url || '';
         mirrorUrl   = currentFilm.mirror_url   || '';
         subtitleUrl = currentFilm.subtitle_url || '';
@@ -172,18 +209,14 @@ function renderPlayer() {
     var activeUrl = (trailerMode && hasTrailer) ? trailerUrl : embedUrl;
 
     var html = '<div class="player-container">';
-
-    // Back
     html += '<div class="container" style="max-width:900px;padding-top:4px;">';
     html += '<a href="/" class="back-btn">' + icon('arrow-left', '14') + ' Kembali ke Home</a>';
     html += '</div>';
 
-    // Player iframe
     html += '<div class="player-wrapper">';
     html += '<div class="player-aspect" id="player-frame">';
     if (activeUrl) {
         var isDrive = isDriveUrl(activeUrl);
-        // Drive embed butuh extra height untuk toolbar-nya (~44px)
         var frameStyle = isDrive ? ' style="padding-bottom:calc(56.25% + 44px);"' : '';
         html = html.replace('<div class="player-aspect" id="player-frame">', '<div class="player-aspect" id="player-frame"' + frameStyle + '>');
         html += '<iframe src="' + activeUrl + '" id="player-iframe" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" frameborder="0"></iframe>';
@@ -192,29 +225,22 @@ function renderPlayer() {
     }
     html += '</div></div>';
 
-    // ── TAB BAR ──────────────────────────────────
     html += '<div class="server-bar" id="tab-bar" style="flex-wrap:wrap;gap:6px;">';
     html += '<span class="server-label">' + icon('tv', '14') + '</span>';
-
-    // Tab Trailer
     if (hasTrailer) {
         html += '<button class="server-btn' + (trailerMode ? ' active' : '') + '" onclick="switchTab(\'trailer\')">'
             + icon('play', '12') + ' Trailer</button>';
     }
-
     if (isSeries) {
-        // Tab episode
         for (var i = 0; i < episodes.length; i++) {
             var isEpActive = !trailerMode && currentEpisode && episodes[i].ep === currentEpisode.ep;
             html += '<button class="server-btn' + (isEpActive ? ' active' : '') + '" onclick="changeEpisode(' + i + ')">Ep ' + episodes[i].ep + '</button>';
         }
     } else {
-        // Tab Full Film
         if (embedUrl) {
             html += '<button class="server-btn' + (!trailerMode ? ' active' : '') + '" onclick="switchTab(\'film\')">'
                 + icon('film', '12') + ' Full Film</button>';
         }
-        // Tab Mirror
         if (mirrorUrl) {
             html += '<button class="server-btn" onclick="switchTab(\'mirror\')">Mirror</button>';
         }
@@ -222,8 +248,6 @@ function renderPlayer() {
     html += '</div>';
 
     html += '<div class="container" style="max-width:900px;">';
-
-    // Info
     html += '<div class="info-section"><div class="info-grid">';
     html += '<img src="' + (currentFilm.poster || '') + '" alt="' + currentFilm.title + '" class="info-poster" onerror="this.style.background=\'#1a1a24\';">';
     html += '<div class="info-details">';
@@ -242,9 +266,7 @@ function renderPlayer() {
         html += '</div>';
     }
     html += '</div></div>';
-
     if (currentFilm.synopsis) html += '<div class="info-synopsis"><div class="info-synopsis-label">Sinopsis</div><p>' + currentFilm.synopsis + '</p></div>';
-
     html += '<div class="info-more">';
     if (currentFilm.director) html += '<div class="info-more-item"><span class="info-more-label">Sutradara</span><span class="info-more-value">' + currentFilm.director + '</span></div>';
     if (currentFilm.cast) {
@@ -253,14 +275,11 @@ function renderPlayer() {
     }
     html += '<div class="info-more-item"><span class="info-more-label">Tipe</span><span class="info-more-value" style="text-transform:uppercase;">' + (currentFilm.type || 'movie') + '</span></div>';
     html += '</div>';
-
     html += '<div class="action-buttons">';
     if (downloadUrl) html += '<a href="' + downloadUrl + '" target="_blank" class="btn-action btn-action-download">' + icon('download', '16') + ' Download</a>';
-    if (subtitleUrl) html += '<a href="' + subtitleUrl + '" target="_blank" class="btn-action">' + icon('file', '16') + ' Subtitle</a>';
+    if (subtitleUrl) html += '<a href="' + subtitleUrl + '" target="_blank" class="btn-action btn-action-subtitle">' + icon('file', '16') + ' Subtitle</a>';
     html += '<button class="btn-action" onclick="copyLink()">' + icon('copy', '16') + ' Salin Link</button>';
-    
     html += '</div>';
-
     html += '<div class="comments-section"><div class="comments-title">' + icon('message', '18') + ' Komentar</div><div id="disqus_thread"></div></div>';
     html += '</div></div>';
     main.innerHTML = html;
@@ -277,46 +296,40 @@ function changeEpisode(index) {
         if (iframe) iframe.src = embedUrl;
         else if (playerFrame) playerFrame.innerHTML = '<iframe src="' + embedUrl + '" id="player-iframe" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" frameborder="0"></iframe>';
     }
-    // Update active tab
     var tabBar = document.getElementById('tab-bar');
     if (tabBar) {
-        tabBar.querySelectorAll('.server-btn').forEach(function(btn, i) {
-            btn.classList.remove('active');
-        });
+        tabBar.querySelectorAll('.server-btn').forEach(function(btn) { btn.classList.remove('active'); });
         var allBtns = tabBar.querySelectorAll('.server-btn');
-        // Hitung offset: kalau ada trailer, btn[0]=trailer, episode mulai btn[1]
         var offset = (currentFilm.trailer ? 1 : 0);
         if (allBtns[offset + index]) allBtns[offset + index].classList.add('active');
     }
-    // Update judul
     var titleEl = document.querySelector('.info-title');
     if (titleEl) titleEl.innerHTML = currentFilm.title + ' <span style="color:#e50914;font-size:0.6em;">EP ' + currentEpisode.ep + '</span>';
-    // Update download
+
+    // Update download & subtitle button
     var dlEl = document.querySelector('.btn-action-download');
     if (dlEl) { dlEl.href = currentEpisode.download || '#'; dlEl.style.display = currentEpisode.download ? '' : 'none'; }
-    // Scroll ke player
+    var subEl = document.querySelector('.btn-action-subtitle');
+    if (subEl) { subEl.href = currentEpisode.subtitle || '#'; subEl.style.display = currentEpisode.subtitle ? '' : 'none'; }
+
     var wrapper = document.querySelector('.player-wrapper');
     if (wrapper) wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function switchTab(tab) {
     var trailerUrl = toEmbedUrl(currentFilm.trailer || '');
-    var filmUrl = currentFilm.embed_url || currentFilm.mirror_url || '';
+    var filmUrl = typeof currentFilm.embed_url === 'string' ? currentFilm.embed_url : '';
     var mirrorUrl = currentFilm.mirror_url || '';
     var iframe = document.getElementById('player-iframe');
     var playerFrame = document.getElementById('player-frame');
     var targetUrl = '';
-
-    if (tab === 'trailer')      { trailerMode = true;  targetUrl = trailerUrl; }
-    else if (tab === 'film')    { trailerMode = false; targetUrl = filmUrl; }
-    else if (tab === 'mirror')  { trailerMode = false; targetUrl = mirrorUrl; }
-
+    if (tab === 'trailer')     { trailerMode = true;  targetUrl = trailerUrl; }
+    else if (tab === 'film')   { trailerMode = false; targetUrl = filmUrl; }
+    else if (tab === 'mirror') { trailerMode = false; targetUrl = mirrorUrl; }
     if (targetUrl) {
         if (iframe) iframe.src = targetUrl;
         else if (playerFrame) playerFrame.innerHTML = '<iframe src="' + targetUrl + '" id="player-iframe" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" frameborder="0"></iframe>';
     }
-
-    // Update active state
     var tabBar = document.getElementById('tab-bar');
     if (tabBar) {
         var btns = tabBar.querySelectorAll('.server-btn');
