@@ -225,6 +225,7 @@ function renderPlayer() {
     }
     html += '</div></div>';
 
+    // TAB BAR (Trailer + Episode/Full Film)
     html += '<div class="server-bar" id="tab-bar" style="flex-wrap:wrap;gap:6px;">';
     html += '<span class="server-label">' + icon('tv', '14') + '</span>';
     if (hasTrailer) {
@@ -244,9 +245,11 @@ function renderPlayer() {
     }
     html += '</div>';
 
-    // Server selector kondisional (movie) — muncul hanya kalau ada mirror
-    if (!isSeries && mirrorUrl && !trailerMode) {
-        html += '<div class="server-bar" id="server-bar" style="gap:8px;">';
+    // SERVER BAR (Server 1 / Server 2) untuk MOVIE
+    // Dirender selalu, tapi disembunyikan jika trailerMode true
+    if (!isSeries && mirrorUrl) {
+        var serverBarStyle = trailerMode ? 'display:none;gap:8px;' : 'gap:8px;';
+        html += '<div class="server-bar" id="server-bar" style="' + serverBarStyle + '">';
         html += '<span class="server-label">' + icon('tv', '14') + ' Server:</span>';
         html += '<button class="server-btn active" id="srv-1" onclick="switchServer(&quot;embed&quot;)">Server 1</button>';
         html += '<button class="server-btn" id="srv-2" onclick="switchServer(&quot;mirror&quot;)">Server 2</button>';
@@ -255,16 +258,18 @@ function renderPlayer() {
         html += '<div id="server-bar" style="display:none;"></div>';
     }
 
-    // Server selector kondisional (series) — muncul berdasarkan episode aktif
+    // SERVER BAR untuk SERIES
     if (isSeries) {
         var hasEpMirror = currentEpisode && currentEpisode.mirror;
-        html += '<div class="server-bar" id="server-bar" style="gap:8px;' + (hasEpMirror ? '' : 'display:none;') + '">';
+        var seriesServerStyle = (trailerMode || !hasEpMirror) ? 'display:none;gap:8px;' : 'gap:8px;';
+        html += '<div class="server-bar" id="server-bar" style="' + seriesServerStyle + '">';
         html += '<span class="server-label">' + icon('tv', '14') + ' Server:</span>';
         html += '<button class="server-btn active" id="srv-1" onclick="switchServer(&quot;embed&quot;)">Server 1</button>';
         html += '<button class="server-btn" id="srv-2" onclick="switchServer(&quot;mirror&quot;)">Server 2</button>';
         html += '</div>';
     }
 
+    // INFO SECTION
     html += '<div class="container" style="max-width:900px;">';
     html += '<div class="info-section"><div class="info-grid">';
     html += '<img src="' + (currentFilm.poster || '') + '" alt="' + currentFilm.title + '" class="info-poster" onerror="this.style.background=\'#1a1a24\';">';
@@ -316,7 +321,6 @@ function changeEpisode(index) {
     }
     var tabBar = document.getElementById('tab-bar');
     if (tabBar) {
-        // Hanya reset tombol episode di tab-bar, bukan server bar
         tabBar.querySelectorAll('.server-btn').forEach(function(btn) { btn.classList.remove('active'); });
         var allBtns = tabBar.querySelectorAll('.server-btn');
         var offset = (currentFilm.trailer ? 1 : 0);
@@ -336,7 +340,6 @@ function changeEpisode(index) {
     if (serverBar) {
         if (currentEpisode && currentEpisode.mirror) {
             serverBar.style.display = '';
-            // Reset ke Server 1
             var srv1 = document.getElementById('srv-1');
             var srv2 = document.getElementById('srv-2');
             if (srv1) srv1.classList.add('active');
@@ -353,17 +356,24 @@ function changeEpisode(index) {
 function switchTab(tab) {
     var trailerUrl = toEmbedUrl(currentFilm.trailer || '');
     var filmUrl = typeof currentFilm.embed_url === 'string' ? currentFilm.embed_url : '';
-    var mirrorUrl = currentFilm.mirror_url || '';
     var iframe = document.getElementById('player-iframe');
     var playerFrame = document.getElementById('player-frame');
     var targetUrl = '';
-    if (tab === 'trailer')     { trailerMode = true;  targetUrl = trailerUrl; }
-    else if (tab === 'film')   { trailerMode = false; targetUrl = filmUrl; }
+    
+    if (tab === 'trailer') {
+        trailerMode = true;
+        targetUrl = trailerUrl;
+    } else if (tab === 'film') {
+        trailerMode = false;
+        targetUrl = filmUrl;
+    }
 
     if (targetUrl) {
         if (iframe) iframe.src = targetUrl;
         else if (playerFrame) playerFrame.innerHTML = '<iframe src="' + targetUrl + '" id="player-iframe" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" frameborder="0"></iframe>';
     }
+    
+    // Update active style di tab-bar
     var tabBar = document.getElementById('tab-bar');
     if (tabBar) {
         var btns = tabBar.querySelectorAll('.server-btn');
@@ -371,20 +381,56 @@ function switchTab(tab) {
             var txt = btn.textContent.trim();
             if (tab === 'trailer') btn.classList.toggle('active', txt.indexOf('Trailer') > -1);
             else if (tab === 'film') btn.classList.toggle('active', txt.indexOf('Full Film') > -1);
-
         });
+    }
+
+    // Atur visibilitas server bar
+    var serverBar = document.getElementById('server-bar');
+    var isSeries = currentFilm.type === 'series';
+    var mirrorUrl = (isSeries && currentEpisode) ? currentEpisode.mirror : currentFilm.mirror_url;
+    
+    if (serverBar) {
+        if (tab === 'trailer') {
+            // Sembunyikan server bar saat trailer
+            serverBar.style.display = 'none';
+        } else if (tab === 'film') {
+            // Tampilkan server bar jika ada mirror_url
+            if (mirrorUrl) {
+                serverBar.style.display = '';
+                var srv1 = document.getElementById('srv-1');
+                var srv2 = document.getElementById('srv-2');
+                if (srv1) srv1.classList.add('active');
+                if (srv2) srv2.classList.remove('active');
+            } else {
+                serverBar.style.display = 'none';
+            }
+        }
+    }
+    
+    // Untuk series: update title biar ga kelebihan span EP
+    if (isSeries) {
+        var titleEl = document.querySelector('.info-title');
+        if (titleEl && !trailerMode && currentEpisode) {
+            titleEl.innerHTML = currentFilm.title + ' <span style="color:#e50914;font-size:0.6em;">EP ' + currentEpisode.ep + '</span>';
+        } else if (titleEl && trailerMode) {
+            titleEl.innerHTML = currentFilm.title;
+        }
     }
 }
 
 function switchServer(server) {
     var targetUrl = '';
+    var isSeries = currentFilm.type === 'series';
+    
     if (server === 'embed') {
-        targetUrl = (currentEpisode ? currentEpisode.embed : currentFilm.embed_url) || '';
+        targetUrl = (isSeries && currentEpisode) ? currentEpisode.embed : currentFilm.embed_url;
     } else if (server === 'mirror') {
-        targetUrl = (currentEpisode ? currentEpisode.mirror : currentFilm.mirror_url) || '';
+        targetUrl = (isSeries && currentEpisode) ? currentEpisode.mirror : currentFilm.mirror_url;
     }
+    
     var iframe = document.getElementById('player-iframe');
     if (iframe && targetUrl) iframe.src = targetUrl;
+    
     var srv1 = document.getElementById('srv-1');
     var srv2 = document.getElementById('srv-2');
     if (srv1) srv1.classList.toggle('active', server === 'embed');
