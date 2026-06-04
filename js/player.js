@@ -130,8 +130,20 @@ function mergeEpisodes(film) {
     return Object.values(map).sort(function(a, b) { return a.ep - b.ep; });
 }
 
+// Update URL dengan parameter episode
+function updateUrlEpisode(epNum) {
+    var url = new URL(window.location.href);
+    if (epNum) {
+        url.searchParams.set('ep', epNum);
+    } else {
+        url.searchParams.delete('ep');
+    }
+    window.history.replaceState({}, '', url);
+}
+
 async function loadPlayer() {
     var filmId = UTILS.getParam('id');
+    var episodeParam = UTILS.getParam('ep');  // Baca parameter episode
     var main = document.getElementById('player-content');
     if (!main) return;
     if (!filmId) { main.innerHTML = renderNotFound('ID film tidak ditemukan'); return; }
@@ -144,7 +156,21 @@ async function loadPlayer() {
         currentEpisode = null;
         if (currentFilm.type === 'series') {
             episodes = mergeEpisodes(currentFilm);
-            currentEpisode = episodes[0] || null;
+            
+            // Cari episode berdasarkan parameter ep
+            if (episodeParam) {
+                var targetEp = parseInt(episodeParam);
+                var foundEpisode = null;
+                for (var i = 0; i < episodes.length; i++) {
+                    if (episodes[i].ep === targetEp) {
+                        foundEpisode = episodes[i];
+                        break;
+                    }
+                }
+                currentEpisode = foundEpisode || episodes[0] || null;
+            } else {
+                currentEpisode = episodes[0] || null;
+            }
         }
         renderPlayer();
         loadDisqus();
@@ -246,7 +272,6 @@ function renderPlayer() {
     html += '</div>';
 
     // SERVER BAR (Server 1 / Server 2) untuk MOVIE
-    // Dirender selalu, tapi disembunyikan jika trailerMode true
     if (!isSeries && mirrorUrl) {
         var serverBarStyle = trailerMode ? 'display:none;gap:8px;' : 'gap:8px;';
         html += '<div class="server-bar" id="server-bar" style="' + serverBarStyle + '">';
@@ -329,6 +354,9 @@ function changeEpisode(index) {
     var titleEl = document.querySelector('.info-title');
     if (titleEl) titleEl.innerHTML = currentFilm.title + ' <span style="color:#e50914;font-size:0.6em;">EP ' + currentEpisode.ep + '</span>';
 
+    // Update URL dengan episode yang dipilih
+    updateUrlEpisode(currentEpisode.ep);
+
     // Update download & subtitle button
     var dlEl = document.querySelector('.btn-action-download');
     if (dlEl) { dlEl.href = currentEpisode.download || '#'; dlEl.style.display = currentEpisode.download ? '' : 'none'; }
@@ -363,9 +391,17 @@ function switchTab(tab) {
     if (tab === 'trailer') {
         trailerMode = true;
         targetUrl = trailerUrl;
+        // Hapus parameter ep dari URL saat mode trailer
+        updateUrlEpisode(null);
     } else if (tab === 'film') {
         trailerMode = false;
         targetUrl = filmUrl;
+        // Kembalikan parameter ep jika series
+        if (currentFilm.type === 'series' && currentEpisode) {
+            updateUrlEpisode(currentEpisode.ep);
+        } else {
+            updateUrlEpisode(null);
+        }
     }
 
     if (targetUrl) {
@@ -391,10 +427,8 @@ function switchTab(tab) {
     
     if (serverBar) {
         if (tab === 'trailer') {
-            // Sembunyikan server bar saat trailer
             serverBar.style.display = 'none';
         } else if (tab === 'film') {
-            // Tampilkan server bar jika ada mirror_url
             if (mirrorUrl) {
                 serverBar.style.display = '';
                 var srv1 = document.getElementById('srv-1');
@@ -465,11 +499,51 @@ function showCopyToast() {
     setTimeout(function() { t.style.opacity = '0'; }, 2000);
 }
 
+// =============================================
+// DISQUS INTEGRATION
+// =============================================
+
 function loadDisqus() {
-    var d = document, s = d.createElement('script');
-    s.src = 'https://' + (CONFIG.DISQUS_SHORTNAME || 'piratesstudio21') + '.disqus.com/embed.js';
-    s.setAttribute('data-timestamp', +new Date());
-    (d.head || d.body).appendChild(s);
+    var shortname = CONFIG.DISQUS_SHORTNAME || 'piratestudio21';
+    var filmId = currentFilm ? currentFilm.id : UTILS.getParam('id');
+    var currentUrl = window.location.href;
+    
+    // Hapus thread Disqus yang lama jika ada
+    var disqusThread = document.getElementById('disqus_thread');
+    if (disqusThread) {
+        disqusThread.innerHTML = '';
+    }
+    
+    // Hapus script Disqus yang lama
+    var oldScript = document.getElementById('disqus-embed-script');
+    if (oldScript) {
+        oldScript.remove();
+    }
+    
+    // Hapus elemen iframe Disqus yang mungkin tertinggal
+    var disqusFrames = document.querySelectorAll('iframe[src*="disqus.com"]');
+    disqusFrames.forEach(function(frame) {
+        frame.remove();
+    });
+    
+    // Reset DISQUS global variable
+    window.DISQUS = undefined;
+    
+    // Konfigurasi Disqus
+    window.disqus_config = function() {
+        this.page.url = currentUrl;
+        this.page.identifier = filmId;  // Gunakan film.id sebagai identifier (bukan per episode)
+        this.page.title = currentFilm ? currentFilm.title : document.title;
+    };
+    
+    // Load script Disqus
+    var script = document.createElement('script');
+    script.id = 'disqus-embed-script';
+    script.src = 'https://' + shortname + '.disqus.com/embed.js';
+    script.setAttribute('data-timestamp', +new Date());
+    script.async = true;
+    
+    (document.head || document.body).appendChild(script);
 }
 
 function renderNotFound(msg) {
