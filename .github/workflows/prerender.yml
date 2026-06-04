@@ -15,86 +15,93 @@ jobs:
         with:
           node-version: '18'
       
+      - name: Install node-fetch
+        run: npm install node-fetch@2
+      
       - name: Create prerender script
         run: |
           cat > prerender.js << 'EOF'
           const fs = require('fs');
+          const fetch = require('node-fetch');
           
-          console.log("Script started...");
+          const SUPABASE_URL = 'https://eogdtpkiwzlarllnxsrj.supabase.co';
+          const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvZ2R0cGtpd3psYXJsbG54c3JqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwODg0NzMsImV4cCI6MjA4OTY2NDQ3M30.eZPbYTuaDerKL9SOEa4ctkxSlU1PiEAU9l42czgYOyI';
           
-          const films = [
-            { id: 'NTFT', title: 'NTFT', genre: 'Action' },
-            { id: 'TTKR', title: 'TTKR', genre: 'Drama' },
-            { id: '100M', title: '100 Meters', genre: 'Action' },
-            { id: 'AVA26', title: 'AVA26', genre: 'Sci-Fi' },
-            { id: 'YNT-01', title: 'YNT-01', genre: 'Adventure' },
-            { id: 'KUBO-01', title: 'KUBO-01', genre: 'Animation' }
-          ];
-          
-          console.log("Films loaded:", films.length);
-          
-          if (!fs.existsSync('film')) {
-            fs.mkdirSync('film');
-            console.log("Folder film created");
-          }
-          
-          for (const film of films) {
-            const html = `<!DOCTYPE html>
+          async function main() {
+            console.log("Fetching films from Supabase...");
+            
+            try {
+              const response = await fetch(`${SUPABASE_URL}/rest/v1/PirateStudio21_DB?select=*`, {
+                headers: {
+                  'apikey': SUPABASE_ANON_KEY,
+                  'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                }
+              });
+              
+              if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+              }
+              
+              const films = await response.json();
+              console.log(`Found ${films.length} films`);
+              
+              if (!fs.existsSync('film')) {
+                fs.mkdirSync('film');
+              }
+              
+              for (const film of films) {
+                const html = `<!DOCTYPE html>
           <html>
           <head>
-            <meta charset="UTF-8">
-            <title>${film.title} - Streaming ${film.genre} | Pirate Studio 21</title>
-            <meta name="description" content="Nonton streaming ${film.title} subtitle Indonesia. Film ${film.genre} terbaik.">
-            <meta name="keywords" content="${film.title}, nonton ${film.title}, streaming ${film.title}, download ${film.title}, sinopsis ${film.title}, ps21 ${film.title}">
-            <link rel="canonical" href="https://piratestudio.vercel.app/play.html?id=${film.id}">
-            <meta http-equiv="refresh" content="0; url=/play.html?id=${film.id}">
+              <meta charset="UTF-8">
+              <title>${film.title} (${film.year || '2024'}) - Streaming ${film.genre || 'Movie'} | Pirate Studio 21</title>
+              <meta name="description" content="Nonton streaming ${film.title} (${film.year || '2024'}) subtitle Indonesia. ${film.genre || 'Film'}. ${film.synopsis ? film.synopsis.substring(0, 150) : ''}">
+              <meta name="keywords" content="${film.title}, nonton ${film.title}, streaming ${film.title}, download ${film.title}, sinopsis ${film.title}, ps21 ${film.title}">
+              <link rel="canonical" href="https://piratestudio.vercel.app/play.html?id=${film.id}">
+              <meta http-equiv="refresh" content="0; url=/play.html?id=${film.id}">
           </head>
           <body>
-            <h1>${film.title} - Streaming Film ${film.genre}</h1>
-            <p>Nonton streaming film ${film.title} subtitle Indonesia. ${film.genre} terbaik. Sinopsis, trailer, dan link streaming tersedia.</p>
-            <p><a href="/play.html?id=${film.id}">Klik di sini untuk menonton ${film.title}</a></p>
+              <h1>${film.title} (${film.year || '2024'}) - Streaming ${film.genre || 'Movie'}</h1>
+              <p>⭐ Rating: ${film.rating || 'N/A'} | 🎬 Durasi: ${film.duration || 'N/A'} | 👤 Sutradara: ${film.director || 'N/A'}</p>
+              <p>${film.synopsis || `Nonton streaming film ${film.title} subtitle Indonesia. ${film.genre || 'Film'} terbaik.`}</p>
+              <p><a href="/play.html?id=${film.id}">Klik di sini untuk menonton ${film.title}</a></p>
           </body>
           </html>`;
-            
-            const filename = `film/${film.id.toLowerCase()}.html`;
-            fs.writeFileSync(filename, html);
-            console.log("Created:", filename);
-          }
-          
-          let sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+                
+                const filename = `film/${film.id.toLowerCase()}.html`;
+                fs.writeFileSync(filename, html);
+                console.log("Created:", filename);
+              }
+              
+              let sitemap = `<?xml version="1.0" encoding="UTF-8"?>
           <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
           <url><loc>https://piratestudio.vercel.app/</loc></url>`;
-          
-          for (const film of films) {
-            sitemap += `\n<url><loc>https://piratestudio.vercel.app/film/${film.id.toLowerCase()}.html</loc></url>`;
+              
+              for (const film of films) {
+                sitemap += `\n<url><loc>https://piratestudio.vercel.app/film/${film.id.toLowerCase()}.html</loc></url>`;
+              }
+              sitemap += `\n</urlset>`;
+              
+              fs.writeFileSync('sitemap.xml', sitemap);
+              console.log("Sitemap created!");
+              console.log("Done!");
+              
+            } catch (error) {
+              console.error("Error:", error.message);
+              process.exit(1);
+            }
           }
-          sitemap += `\n</urlset>`;
           
-          fs.writeFileSync('sitemap.xml', sitemap);
-          console.log("Sitemap created!");
-          console.log("Done!");
+          main();
           EOF
-      
-      - name: Debug - Check script
-        run: |
-          echo "=== File prerender.js ==="
-          cat prerender.js
-          echo "=== End of file ==="
       
       - name: Run prerender script
         run: node prerender.js
-      
-      - name: Debug - Check output
-        run: |
-          echo "=== Folder film ==="
-          ls -la film/ || echo "Folder film tidak ada"
-          echo "=== Sitemap ==="
-          cat sitemap.xml || echo "Sitemap tidak ada"
       
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add film/ sitemap.xml
-          git diff --quiet && git diff --staged --quiet || git commit -m "Auto generate film pages"
+          git diff --quiet && git diff --staged --quiet || git commit -m "Auto generate film pages from Supabase"
           git push
