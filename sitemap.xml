@@ -1,63 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-    
-    <!-- Halaman Utama -->
-    <url>
-        <loc>https://piratestudio.vercel.app/</loc>
-        <lastmod>2026-06-04</lastmod>
-        <changefreq>daily</changefreq>
-        <priority>1.0</priority>
-    </url>
-    
-    <!-- Halaman Pencarian -->
-    <url>
-        <loc>https://piratestudio.vercel.app/search.html</loc>
-        <lastmod>2026-06-04</lastmod>
-        <changefreq>weekly</changefreq>
-        <priority>0.6</priority>
-    </url>
-    
-    <!-- Daftar Film -->
-    <url>
-        <loc>https://piratestudio.vercel.app/play.html?id=AVA26</loc>
-        <lastmod>2026-06-04</lastmod>
-        <changefreq>weekly</changefreq>
-        <priority>0.8</priority>
-    </url>
-    
-    <url>
-        <loc>https://piratestudio.vercel.app/play.html?id=YNT-01</loc>
-        <lastmod>2026-06-04</lastmod>
-        <changefreq>weekly</changefreq>
-        <priority>0.8</priority>
-    </url>
-    
-    <url>
-        <loc>https://piratestudio.vercel.app/play.html?id=NTFT</loc>
-        <lastmod>2026-06-04</lastmod>
-        <changefreq>weekly</changefreq>
-        <priority>0.8</priority>
-    </url>
-    
-    <url>
-        <loc>https://piratestudio.vercel.app/play.html?id=TTKR</loc>
-        <lastmod>2026-06-04</lastmod>
-        <changefreq>weekly</changefreq>
-        <priority>0.8</priority>
-    </url>
-    
-    <url>
-        <loc>https://piratestudio.vercel.app/play.html?id=100M</loc>
-        <lastmod>2026-06-04</lastmod>
-        <changefreq>weekly</changefreq>
-        <priority>0.8</priority>
-    </url>
-    
-    <url>
-        <loc>https://piratestudio.vercel.app/play.html?id=KUBO-01</loc>
-        <lastmod>2026-06-04</lastmod>
-        <changefreq>weekly</changefreq>
-        <priority>0.8</priority>
-    </url>
-    
+<url><loc>https://piratestudio.vercel.app/</loc></url>
+<url><loc>https://piratestudio.vercel.app/film/ntft.html</loc></url>
+<url><loc>https://piratestudio.vercel.app/film/ttkr.html</loc></url>
+<url><loc>https://piratestudio.vercel.app/film/100m.html</loc></url>
+<url><loc>https://piratestudio.vercel.app/film/ava26.html</loc></url>
+<url><loc>https://piratestudio.vercel.app/film/ynt-01.html</loc></url>
+<url><loc>https://piratestudio.vercel.app/film/kubo-01.html</loc></url>
 </urlset>
