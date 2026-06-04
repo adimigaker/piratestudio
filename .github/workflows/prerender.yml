@@ -1,25 +1,26 @@
 name: Pre-render Film Pages
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 */12 * * *'
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '18'
       
       - name: Create prerender script
         run: |
           cat > prerender.js << 'EOF'
           const fs = require('fs');
-          const path = require('path');
+          
+          console.log("Script started...");
           
           const films = [
             { id: 'NTFT', title: 'NTFT', genre: 'Action' },
@@ -30,7 +31,12 @@ jobs:
             { id: 'KUBO-01', title: 'KUBO-01', genre: 'Animation' }
           ];
           
-          if (!fs.existsSync('film')) fs.mkdirSync('film');
+          console.log("Films loaded:", films.length);
+          
+          if (!fs.existsSync('film')) {
+            fs.mkdirSync('film');
+            console.log("Folder film created");
+          }
           
           for (const film of films) {
             const html = `<!DOCTYPE html>
@@ -38,7 +44,7 @@ jobs:
           <head>
             <meta charset="UTF-8">
             <title>${film.title} - Streaming | Pirate Studio 21</title>
-            <meta name="description" content="Nonton streaming ${film.title} subtitle Indonesia. Film ${film.genre} terbaru.">
+            <meta name="description" content="Nonton streaming ${film.title} subtitle Indonesia.">
             <meta name="keywords" content="${film.title}, nonton ${film.title}, ps21 ${film.title}">
             <link rel="canonical" href="https://piratestudio.vercel.app/play.html?id=${film.id}">
             <meta http-equiv="refresh" content="0; url=/play.html?id=${film.id}">
@@ -46,8 +52,9 @@ jobs:
           <body>Redirecting to <a href="/play.html?id=${film.id}">${film.title}</a></body>
           </html>`;
             
-            fs.writeFileSync(`film/${film.id.toLowerCase()}.html`, html);
-            console.log(`Created: film/${film.id.toLowerCase()}.html`);
+            const filename = `film/${film.id.toLowerCase()}.html`;
+            fs.writeFileSync(filename, html);
+            console.log("Created:", filename);
           }
           
           let sitemap = `<?xml version="1.0" encoding="UTF-8"?>
@@ -60,16 +67,30 @@ jobs:
           sitemap += `\n</urlset>`;
           
           fs.writeFileSync('sitemap.xml', sitemap);
-          console.log('Sitemap updated!');
+          console.log("Sitemap created!");
+          console.log("Done!");
           EOF
+      
+      - name: Debug - Check script
+        run: |
+          echo "=== File prerender.js ==="
+          cat prerender.js
+          echo "=== End of file ==="
       
       - name: Run prerender script
         run: node prerender.js
       
-      - name: Commit and push changes
+      - name: Debug - Check output
+        run: |
+          echo "=== Folder film ==="
+          ls -la film/ || echo "Folder film tidak ada"
+          echo "=== Sitemap ==="
+          cat sitemap.xml || echo "Sitemap tidak ada"
+      
+      - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add film/ sitemap.xml
-          git diff --quiet && git diff --staged --quiet || git commit -m "Auto prerender film pages"
+          git diff --quiet && git diff --staged --quiet || git commit -m "Auto generate film pages"
           git push
