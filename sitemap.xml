@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    
+    <!-- Halaman Utama -->
+    <url>
+        <loc>https://piratestudio.vercel.app/</loc>
+        <lastmod>2026-06-04</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>1.0</priority>
+    </url>
+    
+    <!-- Halaman Pencarian -->
+    <url>
+        <loc>https://piratestudio.vercel.app/search.html</loc>
+        <lastmod>2026-06-04</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    
+    <!-- Daftar Film (tambahkan manual sesuai film yang sudah ada) -->
+    <!-- Contoh: -->
+    <url>
+        <loc>https://piratestudio.vercel.app/play.html?id=NTFT</loc>
+        <lastmod>2026-06-04</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    
+    <!-- Tambahkan URL film lainnya di sini -->
+    
+</urlset>
