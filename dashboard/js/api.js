@@ -1,193 +1,50 @@
-// Dashboard API - Supabase Version (Standalone)
+var API_URL = 'https://script.google.com/macros/s/AKfycbxNamdlH6zSVDK_-eC6KWYjb6E2Ob3ivI2kcZRD9XkwxKleb0bTZbKT8xXhQPVsgv0P/exec';
+
 var DASHBOARD_API = {
-    // ── Supabase Configuration ─────────────────────
-    _SUPABASE_URL: 'https://eogdtpkiwzlarllnxsrj.supabase.co',
-    _SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvZ2R0cGtpd3psYXJsbG54c3JqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwODg0NzMsImV4cCI6MjA4OTY2NDQ3M30.eZPbYTuaDerKL9SOEa4ctkxSlU1PiEAU9l42czgYOyI',
-
-    // ── Helper: Supabase Client ─────────────────
-    _getClient: function() {
-        if (typeof supabase === 'undefined') {
-            console.error('Supabase library not loaded!');
-            return null;
+    fetchGET: async function(action, params) {
+        params = params || {};
+        var url = API_URL + '?action=' + encodeURIComponent(action);
+        for (var key in params) {
+            if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
+                url += '&' + encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
+            }
         }
-        return supabase.createClient(this._SUPABASE_URL, this._SUPABASE_ANON_KEY);
-    },
-
-    // ── Helper: Format dari Editor ke Supabase ────────
-    _toSupabaseFormat: function(film) {
-        var formatted = {};
-        formatted.id = film.id;
-        formatted.title = film.title;
-        formatted.slug = film.slug;
-        formatted.type = film.type;
-        formatted.featured = film.featured === 'TRUE' || film.featured === true;
-        formatted.popular = film.popular === 'TRUE' || film.popular === true;
-        formatted.year = parseInt(film.year) || null;
-        formatted.genre = film.genre;
-        formatted.rating = parseFloat(film.rating) || null;
-        formatted.duration = film.duration;
-        formatted.director = film.director;
-        formatted.cast = film.cast;
-        formatted.poster = film.poster;
-        formatted.backdrop = film.backdrop;
-        formatted.synopsis = film.synopsis;
-        formatted.trailer = film.trailer;
-        
-        // Handle URL fields
-        if (film.type === 'series') {
-            // Untuk series: simpan sebagai JSON string (text) - langsung pakai dari editor
-            formatted.embed_url = film.embed_url || '[]';
-            formatted.download_url = film.download_url || '[]';
-            formatted.mirror_url = film.mirror_url || '[]';
-            formatted.subtitle_url = film.subtitle_url || '[]';
-        } else {
-            // Untuk movie: string biasa
-            formatted.embed_url = film.embed_url || '';
-            formatted.download_url = film.download_url || '';
-            formatted.mirror_url = film.mirror_url || '';
-            formatted.subtitle_url = film.subtitle_url || '';
+        console.log('🌐 GET:', url);
+        try {
+            var response = await fetch(url);
+            return await response.json();
+        } catch (error) {
+            console.error('❌ GET Error:', error);
+            return { status: 'error', message: 'Gagal terhubung ke server' };
         }
-        
-        return formatted;
     },
 
-    // ── Helper: Format dari Supabase ke Editor ────────
-    _fromSupabaseFormat: function(film) {
-        var formatted = {};
-        formatted.id = film.id;
-        formatted.title = film.title;
-        formatted.slug = film.slug;
-        formatted.type = film.type;
-        formatted.featured = film.featured ? 'TRUE' : 'FALSE';
-        formatted.popular = film.popular ? 'TRUE' : 'FALSE';
-        formatted.year = film.year;
-        formatted.genre = film.genre;
-        formatted.rating = film.rating;
-        formatted.duration = film.duration;
-        formatted.director = film.director;
-        formatted.cast = film.cast;
-        formatted.poster = film.poster;
-        formatted.backdrop = film.backdrop;
-        formatted.synopsis = film.synopsis;
-        formatted.trailer = film.trailer;
-        
-        // Untuk series: data dari Supabase sudah dalam format JSON string (text)
-        // Langsung kirim ke editor apa adanya
-        if (film.type === 'series') {
-            formatted.embed_url = film.embed_url || '[]';
-            formatted.download_url = film.download_url || '[]';
-            formatted.mirror_url = film.mirror_url || '[]';
-            formatted.subtitle_url = film.subtitle_url || '[]';
-        } else {
-            formatted.embed_url = film.embed_url || '';
-            formatted.download_url = film.download_url || '';
-            formatted.mirror_url = film.mirror_url || '';
-            formatted.subtitle_url = film.subtitle_url || '';
+    // FIX: Dulu pakai FormData — AppScript ga bisa baca itu di postData.contents.
+    // Sekarang: action lewat URL param, data dikirim sebagai raw JSON string di body.
+    fetchPOST: async function(action, data) {
+        var url = API_URL + '?action=' + encodeURIComponent(action);
+        console.log('📤 POST:', url, data);
+        try {
+            var response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' }, // text/plain biar ga trigger CORS preflight
+                body: JSON.stringify(data)
+            });
+            return await response.json();
+        } catch (error) {
+            console.error('❌ POST Error:', error);
+            return { status: 'error', message: 'Gagal terhubung ke server' };
         }
-        
-        return formatted;
     },
 
-    // ── CRUD Operations ──────────────────────────
-    getAll: async function() {
-        var client = this._getClient();
-        if (!client) return { status: 'error', message: 'Supabase client error' };
-        
-        var { data, error } = await client
-            .from('PirateStudio21_DB')
-            .select('*')
-            .order('year', { ascending: false });
-        
-        if (error) return { status: 'error', message: error.message };
-        var films = data.map(this._fromSupabaseFormat);
-        return { status: 'success', data: films };
-    },
-
-    getById: async function(id) {
-        var client = this._getClient();
-        if (!client) return { status: 'error', message: 'Supabase client error' };
-        
-        var { data, error } = await client
-            .from('PirateStudio21_DB')
-            .select('*')
-            .eq('id', id)
-            .single();
-        
-        if (error) return { status: 'error', message: error.message };
-        var film = this._fromSupabaseFormat(data);
-        return { status: 'success', data: film };
-    },
-
-    search: async function(q) {
-        if (!q || q.trim() === '') return { status: 'success', data: [] };
-        
-        var client = this._getClient();
-        if (!client) return { status: 'error', message: 'Supabase client error' };
-        
-        var searchTerm = '%' + q.toLowerCase() + '%';
-        var { data, error } = await client
-            .from('PirateStudio21_DB')
-            .select('*')
-            .or(`title.ilike.${searchTerm},genre.ilike.${searchTerm}`);
-        
-        if (error) return { status: 'error', message: error.message };
-        var films = data.map(this._fromSupabaseFormat);
-        return { status: 'success', data: films };
-    },
-
-    add: async function(data) {
-        var client = this._getClient();
-        if (!client) return { status: 'error', message: 'Supabase client error' };
-        
-        var formatted = this._toSupabaseFormat(data);
-        
-        var { error } = await client
-            .from('PirateStudio21_DB')
-            .insert([formatted]);
-        
-        if (error) return { status: 'error', message: error.message };
-        
-        if (typeof API !== 'undefined' && API.clearCache) API.clearCache();
-        
-        return { status: 'success', message: 'Film berhasil ditambahkan' };
-    },
-
-    update: async function(data) {
-        var client = this._getClient();
-        if (!client) return { status: 'error', message: 'Supabase client error' };
-        
-        var formatted = this._toSupabaseFormat(data);
-        
-        var { error } = await client
-            .from('PirateStudio21_DB')
-            .update(formatted)
-            .eq('id', data.id);
-        
-        if (error) return { status: 'error', message: error.message };
-        
-        if (typeof API !== 'undefined' && API.clearCache) API.clearCache();
-        
-        return { status: 'success', message: 'Film berhasil diupdate' };
-    },
-
-    delete: async function(id) {
-        var client = this._getClient();
-        if (!client) return { status: 'error', message: 'Supabase client error' };
-        
-        var { error } = await client
-            .from('PirateStudio21_DB')
-            .delete()
-            .eq('id', id);
-        
-        if (error) return { status: 'error', message: error.message };
-        
-        if (typeof API !== 'undefined' && API.clearCache) API.clearCache();
-        
-        return { status: 'success', message: 'Film berhasil dihapus' };
-    },
-
-    // ── Google Drive Upload ──────────────────────────
-    _APPSCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxNamdlH6zSVDK_-eC6KWYjb6E2Ob3ivI2kcZRD9XkwxKleb0bTZbKT8xXhQPVsgv0P/exec',
+    getAll:      function()     { return this.fetchGET('getAll'); },
+    getById:     function(id)   { return this.fetchGET('getById', { id: id }); },
+    search:      function(q)    { return this.fetchGET('search', { q: q }); },
+    add:         function(data) { return this.fetchPOST('add', data); },
+    update:      function(data) { return this.fetchPOST('update', data); },
+    delete:      function(id)   { return this.fetchPOST('delete', { id: id }); },
+    setFeatured: function(id)   { return this.fetchPOST('setFeatured', { id: id }); },
+    setPopular:  function(id)   { return this.fetchPOST('setPopular', { id: id }); },
 
     uploadImage: function(file) {
         return new Promise(function(resolve) {
@@ -197,8 +54,8 @@ var DASHBOARD_API = {
                     var base64 = reader.result.split(',')[1];
                     var ext = (file.name || 'img').split('.').pop() || 'jpg';
                     var fileName = 'ps21_' + Date.now() + '.' + ext;
-                    
-                    var response = await fetch(DASHBOARD_API._APPSCRIPT_URL, {
+                    // Ikuti pola Kisah Tabu: action di dalam body, bukan URL param
+                    var response = await fetch(API_URL, {
                         method: 'POST',
                         headers: { 'Content-Type': 'text/plain' },
                         body: JSON.stringify({
@@ -215,26 +72,5 @@ var DASHBOARD_API = {
             };
             reader.readAsDataURL(file);
         });
-    },
-
-    fetchGET: async function(action, params) {
-        params = params || {};
-        var url = this._APPSCRIPT_URL + '?action=' + encodeURIComponent(action);
-        for (var key in params) {
-            if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
-                url += '&' + encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
-            }
-        }
-        try {
-            var response = await fetch(url);
-            return await response.json();
-        } catch (error) {
-            console.error('❌ GET Error:', error);
-            return { status: 'error', message: 'Gagal terhubung ke server' };
-        }
-    },
-
-    listImages: function() {
-        return this.fetchGET('listImages');
     }
 };
