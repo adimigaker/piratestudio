@@ -273,53 +273,56 @@ function createEpisodeElement(data) {
     return div;
 }
 
-// Tambah episode di bawah (B, B+1, C)
+// =============================================
+// EPISODE MANAGEMENT - FIXED VERSION
+// =============================================
+
+// Tambah episode di BAWAH (C+1 = copy dari D, D tetap 4, E tetap 5)
 function addEpisodeBelow(btn) {
     var episodeItem = btn.closest('.episode-item');
     var container = document.getElementById('episode-list');
     var currentNum = parseInt(episodeItem.dataset.ep);
     var newNum = currentNum + 1;
     
-    var newEpisode = {
-        ep: newNum,
-        embed: '',
-        download: '',
-        mirror: '',
-        subtitle: ''
-    };
-    
-    var newDiv = createEpisodeElement(newEpisode);
-    
-    // Insert setelah episode saat ini
+    // Ambil episode AFTER current (yaitu D) untuk di-copy nilainya
     var nextItem = episodeItem.nextSibling;
+    var nextEpisodeData = null;
+    
+    if (nextItem) {
+        // Jika ada episode D, copy nilainya
+        nextEpisodeData = {
+            ep: newNum,  // nomor baru C+1
+            embed: nextItem.querySelector('.ep-embed')?.value || '',
+            download: nextItem.querySelector('.ep-download')?.value || '',
+            mirror: nextItem.querySelector('.ep-mirror')?.value || '',
+            subtitle: nextItem.querySelector('.ep-subtitle')?.value || ''
+        };
+    } else {
+        // Jika tidak ada episode D (berarti ini episode terakhir)
+        // Maka episode baru kosong
+        nextEpisodeData = {
+            ep: newNum,
+            embed: '',
+            download: '',
+            mirror: '',
+            subtitle: ''
+        };
+    }
+    
+    var newDiv = createEpisodeElement(nextEpisodeData);
+    
+    // Insert setelah episode saat ini (C)
     if (nextItem) {
         container.insertBefore(newDiv, nextItem);
     } else {
         container.appendChild(newDiv);
     }
     
-    // Update nomor episode di bawahnya (yang nomornya >= newNum, tambah 1)
-    var allItems = document.querySelectorAll('.episode-item');
-    var foundNew = false;
-    for (var i = 0; i < allItems.length; i++) {
-        var item = allItems[i];
-        var epNum = parseInt(item.dataset.ep);
-        
-        if (item === newDiv) {
-            foundNew = true;
-            continue;
-        }
-        if (foundNew && epNum >= newNum) {
-            var newEpNum = epNum + 1;
-            item.dataset.ep = newEpNum;
-            updateEpisodeNumberDisplay(item, newEpNum);
-        }
-    }
-    
-    // Hanya update episodeCount, tanpa sorting
+    // ✅ TIDAK menggeser episode D, E, dll
+    // Hanya update episodeCount tanpa sorting ulang
     episodeCount = document.querySelectorAll('.episode-item').length;
     
-    // Scroll ke episode baru (tanpa pindah ke atas dulu)
+    // Scroll ke episode baru
     setTimeout(function() {
         newDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         newDiv.style.transition = 'background 0.3s';
@@ -330,7 +333,7 @@ function addEpisodeBelow(btn) {
     }, 50);
 }
 
-// Sisipkan episode di atas (B-1, B, C)
+// Sisipkan episode di ATAS (C-1 = copy dari B, B tetap 2)
 function insertEpisodeAbove(btn) {
     var episodeItem = btn.closest('.episode-item');
     var container = document.getElementById('episode-list');
@@ -342,24 +345,42 @@ function insertEpisodeAbove(btn) {
         return;
     }
     
-    var newEpisode = {
-        ep: newNum,
-        embed: '',
-        download: '',
-        mirror: '',
-        subtitle: ''
-    };
+    // Ambil episode BEFORE current (yaitu B) untuk di-copy nilainya
+    var prevItem = episodeItem.previousSibling;
+    var prevEpisodeData = null;
     
-    var newDiv = createEpisodeElement(newEpisode);
+    if (prevItem) {
+        // Jika ada episode B, copy nilainya
+        prevEpisodeData = {
+            ep: newNum,  // nomor baru C-1
+            embed: prevItem.querySelector('.ep-embed')?.value || '',
+            download: prevItem.querySelector('.ep-download')?.value || '',
+            mirror: prevItem.querySelector('.ep-mirror')?.value || '',
+            subtitle: prevItem.querySelector('.ep-subtitle')?.value || ''
+        };
+    } else {
+        // Jika tidak ada episode B (berarti ini episode pertama)
+        // Maka episode baru kosong
+        prevEpisodeData = {
+            ep: newNum,
+            embed: '',
+            download: '',
+            mirror: '',
+            subtitle: ''
+        };
+    }
     
-    // Insert SEBELUM episode saat ini
+    var newDiv = createEpisodeElement(prevEpisodeData);
+    
+    // Insert SEBELUM episode saat ini (C)
     container.insertBefore(newDiv, episodeItem);
     
-    // Episode yang dipilih dan seterusnya TIDAK diubah nomornya
+    // ✅ TIDAK menggeser episode C, D, E, dll
+    // Episode C tetap bernomor sama, tidak berubah
     
     episodeCount = document.querySelectorAll('.episode-item').length;
     
-    // Scroll ke episode baru (tanpa pindah ke atas dulu)
+    // Scroll ke episode baru
     setTimeout(function() {
         newDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         newDiv.style.transition = 'background 0.3s';
